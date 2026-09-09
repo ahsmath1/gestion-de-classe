@@ -11,10 +11,12 @@ class AbsenceApp {
     this.rollcallState = {}; // { studentId: 'A' | 'R' | null }
     this.activityClassMode = true; // Mode compact pour la saisie rapide pendant le cours
     this.language = 'fr';
+    this.activeSchoolYear = '2026/2027';
   }
 
   async init() {
     await db.init();
+    await this.loadActiveSchoolYear();
     await this.loadLanguage();
     this.setupTheme();
     this.registerServiceWorker();
@@ -22,12 +24,133 @@ class AbsenceApp {
     this.updateCurrentDateDisplay();
     await this.renderProfile();
     await this.renderDashboard();
+    await this.refreshSchoolYearSelector();
 
     // Premier lancement sur un nouvel appareil : aucun compte en ligne n'est créé.
     const configured = await db.get('settings', 'profileConfigured');
     if (!configured?.value) {
       setTimeout(() => this.showFirstSetup(), 250);
     }
+  }
+
+  async loadActiveSchoolYear() {
+    const s = await db.get('settings', 'activeSchoolYear');
+    this.activeSchoolYear = s?.value || '2026/2027';
+    const el = document.getElementById('school-year-selector');
+    if (el) el.value = this.activeSchoolYear;
+    this.updateYearDisplay();
+  }
+
+  updateYearDisplay() {
+    const els = [document.getElementById('app-year-display'), document.getElementById('backup-year-display'), document.getElementById('calendar-year-display')];
+    els.forEach(el => { if (el) el.textContent = this.activeSchoolYear; });
+    const sel = document.getElementById('school-year-selector');
+    if (sel) sel.value = this.activeSchoolYear;
+  }
+
+  async getYearData(includeSettings=true) {
+    const data = {
+      year: this.activeSchoolYear,
+      classes: await db.getAll('classes'), students: await db.getAll('students'), timetable: await db.getAll('timetable'),
+      attendance: await db.getAll('attendance'), calendar: await db.getAll('calendar'), sessions: await db.getAll('sessions'),
+      activityCategories: await db.getAll('activityCategories'), activityActions: await db.getAll('activityActions'), activityEvents: await db.getAll('activityEvents')
+    };
+    if (includeSettings) {
+      const settings = await db.getAll('settings');
+      data.settings = settings.filter(x => !['teacherName','teacherSubject','language','profileConfigured','appVersion','activeSchoolYear'].includes(x.key));
+    }
+    return data;
+  }
+
+  async saveYearArchive(year) {
+    const data = await this.getYearData(true);
+    data.year = year;
+    await db.put('schoolYears', { year, data, archivedAt: new Date().toISOString() });
+  }
+
+  async clearYearData() {
+    for (const store of ['classes','students','timetable','attendance','calendar','sessions','activityCategories','activityActions','activityEvents']) {
+      if (db.db.objectStoreNames.contains(store)) await db.clearStore(store);
+    }
+  }
+
+  async restoreYearArchive(year) {
+    const archive = await db.get('schoolYears', year);
+    if (!archive?.data) throw new Error('Année archivée introuvable.');
+    await this.clearYearData();
+    const d = archive.data;
+    for (const x of (d.classes||[])) await db.put('classes', x);
+    for (const x of (d.students||[])) await db.put('students', x);
+    for (const x of (d.timetable||[])) await db.put('timetable', x);
+    for (const x of (d.attendance||[])) await db.put('attendance', x);
+    for (const x of (d.calendar||[])) await db.put('calendar', x);
+    for (const x of (d.sessions||[])) await db.put('sessions', x);
+    for (const x of (d.activityCategories||[])) await db.put('activityCategories', x);
+    for (const x of (d.activityActions||[])) await db.put('activityActions', x);
+    for (const x of (d.activityEvents||[])) await db.put('activityEvents', x);
+    for (const x of (d.settings||[])) await db.put('settings', x);
+  }
+
+  yearDates(year) {
+    const [y] = String(year).split('/').map(Number);
+    return { start: `${y}-09-01`, end: `${y+1}-07-10` };
+  }
+
+  async createSchoolYear() {
+    const input = prompt('Nouvelle année scolaire (ex. 2027/2028) :', '2027/2028');
+    if (!input) return;
+    const year = input.trim();
+    if (!/^\d{4}\/\d{4}$/.test(year)) { alert('Format attendu : 2027/2028'); return; }
+    if (year === this.activeSchoolYear) { alert('Cette année est déjà active.'); return; }
+    if (await db.get('schoolYears', year)) { alert('Cette année existe déjà. Utilisez « Changer d’année ».'); return; }
+    if (!confirm(`Créer l’année ${year} ?\n\nL’année ${this.activeSchoolYear} sera archivée automatiquement.\nLes anciennes données ne seront pas supprimées.`)) return;
+    await this.saveYearArchive(this.activeSchoolYear);
+    const copyConfig = confirm(`Pour ${year}, voulez-vous reprendre la configuration de l’année actuelle ?\n\nOK = classes + emploi du temps + catégories/actions\nAnnuler = nouvelle année vierge\n\nLes élèves et toutes les absences/activités ne seront jamais copiés.`);
+    const oldConfig = copyConfig ? {
+      classes: await db.getAll('classes'), timetable: await db.getAll('timetable'),
+      activityCategories: await db.getAll('activityCategories'), activityActions: await db.getAll('activityActions')
+    } : null;
+    await this.clearYearData();
+    if (oldConfig) {
+      for (const x of oldConfig.classes) await db.put('classes', {...x});
+      for (const x of oldConfig.timetable) await db.put('timetable', {...x});
+      for (const x of oldConfig.activityCategories) await db.put('activityCategories', {...x});
+      for (const x of oldConfig.activityActions) await db.put('activityActions', {...x});
+    }
+    const dates = this.yearDates(year);
+    await db.put('settings', {key:'schoolStart', value:dates.start});
+    await db.put('settings', {key:'schoolEnd', value:dates.end});
+    await db.put('settings', {key:'activeSchoolYear', value:year});
+    this.activeSchoolYear = year;
+    this.updateYearDisplay();
+    await this.renderProfile(); await this.renderDashboard();
+    alert(`Année ${year} créée.\n\nLes classes, élèves, emploi du temps et calendrier doivent maintenant être configurés pour cette nouvelle année.`);
+  }
+
+  async switchSchoolYear(year) {
+    if (!year || year === this.activeSchoolYear) return;
+    if (!confirm(`Passer de ${this.activeSchoolYear} à ${year} ?\n\nLes données actuelles seront d’abord archivées automatiquement.`)) { this.updateYearDisplay(); return; }
+    await this.saveYearArchive(this.activeSchoolYear);
+    await this.restoreYearArchive(year);
+    await db.put('settings', {key:'activeSchoolYear', value:year});
+    this.activeSchoolYear = year;
+    this.updateYearDisplay();
+    await this.renderProfile(); await this.renderDashboard();
+    this.navigateTo('view-home');
+    alert(`Année ${year} activée.`);
+  }
+
+  async listSchoolYears() {
+    const years = await db.getAll('schoolYears');
+    const all = new Set([this.activeSchoolYear, ...years.map(x=>x.year)]);
+    return [...all].sort();
+  }
+
+  async refreshSchoolYearSelector() {
+    const sel = document.getElementById('school-year-selector'); if (!sel) return;
+    const years = await this.listSchoolYears();
+    sel.innerHTML = years.map(y => `<option value=\"${this.escapeHtml(y)}\">${this.escapeHtml(y)}</option>`).join('');
+    sel.value = this.activeSchoolYear;
   }
 
   async renderProfile() {
@@ -42,7 +165,9 @@ class AbsenceApp {
     if (sub) sub.textContent = subject ? `${this.t('teacherOf')} ${subject}` : this.t('teacher');
     const logo = document.getElementById('app-name-display');
     if (logo) logo.textContent = appName;
-    document.title = `${appName} 2026/2027`;
+    this.updateYearDisplay();
+    await this.refreshSchoolYearSelector();
+    document.title = `${appName} ${this.activeSchoolYear}`;
     const summary = document.getElementById('profile-summary');
     if (summary) {
       const classes = await db.getAll('classes');
@@ -88,8 +213,8 @@ class AbsenceApp {
   }
 
   i18n = {
-    fr: { subjectLabel:'Matière enseignée :', languageLabel:'Langue de l’application :', welcomeSubjectLabel:'Votre matière :', profilePrefix:'Profil :', profileNotConfigured:'Profil : non configuré', teacherOf:'Enseignant de', teacher:'Enseignant', teacherNotEntered:'Enseignant non renseigné', classesConfigured:'classe(s) configurée(s)', profileButton:'👤 Mon profil', startRollcall:"Lancer l'appel", todayCourses:'📅 Mes cours du jour', todayCoursesSub:"Saisie directe de l'appel", students:'👨‍🎓 Élèves', studentsSub:'Gestion et listes par classe', activities:'⭐ Activités & comportement', activitiesSub:'Notes sur 20 et pénalités en un clic', stats:'📊 Statistiques', statsSub:'Bilans et classements', history:'📋 Historique', historySub:'Recherche et modification', timetable:'⚙️ Emploi du temps', timetableSub:'Configuration des créneaux', calendar:'🗓 Calendrier', calendarSub:'Vacances et jours fériés', backup:'💾 Sauvegarde / Export', backupSub:'JSON, Excel et CSV', home:'← Accueil', todayTitle:'Cours du jour', today:"Aujourd'hui", studentsBack:'← Élèves', studentDetail:'Fiche Individuelle', activityDetail:'⭐ Activités et comportement', manageActivities:'Gérer les activités', attendanceHistory:'Historique de présence', configure:'⚙️ Configurer', newPeriod:'↻ Nouvelle période', courseMode:'⚡ Mode cours', statsTitle:'📊 Statistiques & Bilans', historyTitle:'📋 Historique des Appels', timetableTitle:'⚙️ Configuration Emploi du Temps', addCourse:'+ Ajouter un créneau', calendarTitle:'🗓 Calendrier Scolaire 2026/2027', addHoliday:'+ Ajouter Vacances / Férié / Exception', backupTitle:'💾 Sauvegarde & Exports', teacherProfile:'👤 Profil enseignant', editProfile:'Configurer / modifier mon profil', fullBackup:'💾 Sauvegarde Complète (JSON)', exportJson:'Exporter la sauvegarde JSON', restoreBackup:'↩ Restaurer une Sauvegarde', restoreData:'Restaurer les données', mergeBackup:'🔄 Fusionner une sauvegarde', mergeBackupHelp:'Ajoute les données du téléphone aux données du PC sans supprimer les anciennes données. Une sauvegarde automatique du PC sera téléchargée avant la fusion.', mergeData:'🔄 Fusionner avec les données actuelles', excelExport:'📊 Export Excel / CSV', printPdf:'🖨 Imprimer / Exporter en PDF', demoReset:'⚠️ Données de Démonstration & Réinitialisation', demoStudents:'Charger des Élèves de Démonstration', clearAll:'🗑 Effacer TOUTES les données', profileTitle:'👤 Mon profil enseignant', cancel:'Annuler', save:'Enregistrer', welcome:'👋 Bienvenue !', startSetup:'Commencer avec cette configuration', addStudent:'Ajouter un Élève', importStudents:"📥 Importer une liste d'élèves", startImport:"Lancer l'importation", manageClasses:'⚙️ Gérer les Classes', addClass:'Ajouter la classe', close:'Fermer', addCourseModal:'Ajouter un Créneau', addHolidayModal:'Ajouter des Vacances / Jour Férié', activityConfig:'⚙️ Configuration — Activités et comportement', saveMaxScore:'Enregistrer la note maximale', addCategory:'+ Ajouter une catégorie', addAction:'+ Ajouter une action', category:'Catégorie', actionPenalty:'Action / pénalité', activityHistory:'Historique', rollcallSaved:'APPEL ENREGISTRÉ', backToToday:'Retour aux cours du jour', searchStudent:'🔎 Rechercher un élève...', searchStudentByName:'🔎 Rechercher un élève par nom...', searchStudentName:'🔎 Nom ou prénom...', teacherNamePlaceholder:'ex. Ahmed EL ...'},
-    ar: { subjectLabel:'المادة التي تدرسها:', languageLabel:'لغة التطبيق:', welcomeSubjectLabel:'المادة التي تدرسها:', profilePrefix:'الملف الشخصي:', profileNotConfigured:'الملف الشخصي: غير مُعد', teacherOf:'أستاذ مادة', teacher:'الأستاذ', teacherNotEntered:'اسم الأستاذ غير مُدخل', classesConfigured:'قسم(أقسام) مُعدّة', profileButton:'👤 ملفي الشخصي', startRollcall:'بدء تسجيل الحضور', todayCourses:'📅 حصصي اليوم', todayCoursesSub:'تسجيل الحضور مباشرة', students:'👨‍🎓 التلاميذ', studentsSub:'التدبير واللوائح حسب القسم', activities:'⭐ الأنشطة والسلوك', activitiesSub:'نقط من 20 وخصومات بنقرة واحدة', stats:'📊 الإحصائيات', statsSub:'الحصيلة والترتيب', history:'📋 السجل', historySub:'البحث والتعديل', timetable:'⚙️ استعمال الزمن', timetableSub:'إعداد الحصص', calendar:'🗓 التقويم', calendarSub:'العطل والأيام الرسمية', backup:'💾 النسخ والتصدير', backupSub:'JSON وExcel وCSV', home:'← الرئيسية', todayTitle:'حصص اليوم', today:'اليوم', studentsBack:'← التلاميذ', studentDetail:'بطاقة التلميذ', activityDetail:'⭐ الأنشطة والسلوك', manageActivities:'تدبير الأنشطة', attendanceHistory:'سجل الحضور', configure:'⚙️ الإعدادات', newPeriod:'↻ فترة جديدة', courseMode:'⚡ وضع الحصة', statsTitle:'📊 الإحصائيات والحصيلة', historyTitle:'📋 سجل الحضور', timetableTitle:'⚙️ إعداد استعمال الزمن', addCourse:'+ إضافة حصة', calendarTitle:'🗓 التقويم المدرسي 2026/2027', addHoliday:'+ إضافة عطلة / يوم رسمي / استثناء', backupTitle:'💾 النسخ والتصدير', teacherProfile:'👤 ملف الأستاذ', editProfile:'إعداد / تعديل ملفي', fullBackup:'💾 النسخ الاحتياطي الكامل (JSON)', exportJson:'تصدير النسخة الاحتياطية JSON', restoreBackup:'↩ استعادة نسخة احتياطية', restoreData:'استعادة البيانات', mergeBackup:'🔄 دمج نسخة احتياطية', mergeBackupHelp:'إضافة بيانات الهاتف إلى بيانات الحاسوب دون حذف البيانات القديمة. سيتم تنزيل نسخة احتياطية تلقائياً قبل الدمج.', mergeData:'🔄 دمج مع البيانات الحالية', excelExport:'📊 تصدير Excel / CSV', printPdf:'🖨 طباعة / تصدير PDF', demoReset:'⚠️ بيانات تجريبية وإعادة التهيئة', demoStudents:'تحميل تلاميذ تجريبيين', clearAll:'🗑 حذف جميع البيانات', profileTitle:'👤 ملف الأستاذ', cancel:'إلغاء', save:'حفظ', welcome:'👋 مرحباً!', startSetup:'بدء العمل بهذه الإعدادات', addStudent:'إضافة تلميذ', importStudents:'📥 استيراد لائحة التلاميذ', startImport:'بدء الاستيراد', manageClasses:'⚙️ تدبير الأقسام', addClass:'إضافة القسم', close:'إغلاق', addCourseModal:'إضافة حصة', addHolidayModal:'إضافة عطلة / يوم رسمي', activityConfig:'⚙️ إعدادات الأنشطة والسلوك', saveMaxScore:'حفظ النقطة القصوى', addCategory:'+ إضافة فئة', addAction:'+ إضافة إجراء', category:'الفئة', actionPenalty:'الإجراء / الخصم', activityHistory:'السجل', rollcallSaved:'تم تسجيل الحضور', backToToday:'العودة إلى حصص اليوم', searchStudent:'🔎 البحث عن تلميذ...', searchStudentByName:'🔎 البحث عن تلميذ بالاسم...', searchStudentName:'🔎 الاسم أو النسب...', teacherNamePlaceholder:'مثال: أحمد ...'}
+    fr: { subjectLabel:'Matière enseignée :', languageLabel:'Langue de l’application :', welcomeSubjectLabel:'Votre matière :', profilePrefix:'Profil :', profileNotConfigured:'Profil : non configuré', teacherOf:'Enseignant de', teacher:'Enseignant', teacherNotEntered:'Enseignant non renseigné', classesConfigured:'classe(s) configurée(s)', profileButton:'👤 Mon profil', startRollcall:"Lancer l'appel", todayCourses:'📅 Mes cours du jour', todayCoursesSub:"Saisie directe de l'appel", students:'👨‍🎓 Élèves', studentsSub:'Gestion et listes par classe', activities:'⭐ Activités & comportement', activitiesSub:'Notes sur 20 et pénalités en un clic', stats:'📊 Statistiques', statsSub:'Bilans et classements', history:'📋 Historique', historySub:'Recherche et modification', timetable:'⚙️ Emploi du temps', timetableSub:'Configuration des créneaux', calendar:'🗓 Calendrier', calendarSub:'Vacances et jours fériés', backup:'💾 Sauvegarde / Export', backupSub:'JSON, Excel et CSV', home:'← Accueil', todayTitle:'Cours du jour', today:"Aujourd'hui", studentsBack:'← Élèves', studentDetail:'Fiche Individuelle', activityDetail:'⭐ Activités et comportement', manageActivities:'Gérer les activités', attendanceHistory:'Historique de présence', configure:'⚙️ Configurer', newPeriod:'↻ Nouvelle période', courseMode:'⚡ Mode cours', statsTitle:'📊 Statistiques & Bilans', historyTitle:'📋 Historique des Appels', timetableTitle:'⚙️ Configuration Emploi du Temps', addCourse:'+ Ajouter un créneau', calendarTitlePrefix:'🗓 Calendrier Scolaire', addHoliday:'+ Ajouter Vacances / Férié / Exception', backupTitle:'💾 Sauvegarde & Exports', teacherProfile:'👤 Profil enseignant', editProfile:'Configurer / modifier mon profil', fullBackup:'💾 Sauvegarde Complète (JSON)', exportJson:'Exporter la sauvegarde JSON', restoreBackup:'↩ Restaurer une Sauvegarde', restoreData:'Restaurer les données', mergeBackup:'🔄 Fusionner une sauvegarde', mergeBackupHelp:'Ajoute les données du téléphone aux données du PC sans supprimer les anciennes données. Une sauvegarde automatique du PC sera téléchargée avant la fusion.', mergeData:'🔄 Fusionner avec les données actuelles', excelExport:'📊 Export Excel / CSV', printPdf:'🖨 Imprimer / Exporter en PDF', demoReset:'⚠️ Données de Démonstration & Réinitialisation', demoStudents:'Charger des Élèves de Démonstration', clearAll:'🗑 Effacer TOUTES les données', profileTitle:'👤 Mon profil enseignant', cancel:'Annuler', save:'Enregistrer', welcome:'👋 Bienvenue !', startSetup:'Commencer avec cette configuration', addStudent:'Ajouter un Élève', importStudents:"📥 Importer une liste d'élèves", startImport:"Lancer l'importation", manageClasses:'⚙️ Gérer les Classes', addClass:'Ajouter la classe', close:'Fermer', addCourseModal:'Ajouter un Créneau', addHolidayModal:'Ajouter des Vacances / Jour Férié', activityConfig:'⚙️ Configuration — Activités et comportement', saveMaxScore:'Enregistrer la note maximale', addCategory:'+ Ajouter une catégorie', addAction:'+ Ajouter une action', category:'Catégorie', actionPenalty:'Action / pénalité', activityHistory:'Historique', rollcallSaved:'APPEL ENREGISTRÉ', backToToday:'Retour aux cours du jour', searchStudent:'🔎 Rechercher un élève...', searchStudentByName:'🔎 Rechercher un élève par nom...', searchStudentName:'🔎 Nom ou prénom...', teacherNamePlaceholder:'ex. Ahmed EL ...'},
+    ar: { subjectLabel:'المادة التي تدرسها:', languageLabel:'لغة التطبيق:', welcomeSubjectLabel:'المادة التي تدرسها:', profilePrefix:'الملف الشخصي:', profileNotConfigured:'الملف الشخصي: غير مُعد', teacherOf:'أستاذ مادة', teacher:'الأستاذ', teacherNotEntered:'اسم الأستاذ غير مُدخل', classesConfigured:'قسم(أقسام) مُعدّة', profileButton:'👤 ملفي الشخصي', startRollcall:'بدء تسجيل الحضور', todayCourses:'📅 حصصي اليوم', todayCoursesSub:'تسجيل الحضور مباشرة', students:'👨‍🎓 التلاميذ', studentsSub:'التدبير واللوائح حسب القسم', activities:'⭐ الأنشطة والسلوك', activitiesSub:'نقط من 20 وخصومات بنقرة واحدة', stats:'📊 الإحصائيات', statsSub:'الحصيلة والترتيب', history:'📋 السجل', historySub:'البحث والتعديل', timetable:'⚙️ استعمال الزمن', timetableSub:'إعداد الحصص', calendar:'🗓 التقويم', calendarSub:'العطل والأيام الرسمية', backup:'💾 النسخ والتصدير', backupSub:'JSON وExcel وCSV', home:'← الرئيسية', todayTitle:'حصص اليوم', today:'اليوم', studentsBack:'← التلاميذ', studentDetail:'بطاقة التلميذ', activityDetail:'⭐ الأنشطة والسلوك', manageActivities:'تدبير الأنشطة', attendanceHistory:'سجل الحضور', configure:'⚙️ الإعدادات', newPeriod:'↻ فترة جديدة', courseMode:'⚡ وضع الحصة', statsTitle:'📊 الإحصائيات والحصيلة', historyTitle:'📋 سجل الحضور', timetableTitle:'⚙️ إعداد استعمال الزمن', addCourse:'+ إضافة حصة', calendarTitlePrefix:'🗓 التقويم المدرسي', addHoliday:'+ إضافة عطلة / يوم رسمي / استثناء', backupTitle:'💾 النسخ والتصدير', teacherProfile:'👤 ملف الأستاذ', editProfile:'إعداد / تعديل ملفي', fullBackup:'💾 النسخ الاحتياطي الكامل (JSON)', exportJson:'تصدير النسخة الاحتياطية JSON', restoreBackup:'↩ استعادة نسخة احتياطية', restoreData:'استعادة البيانات', mergeBackup:'🔄 دمج نسخة احتياطية', mergeBackupHelp:'إضافة بيانات الهاتف إلى بيانات الحاسوب دون حذف البيانات القديمة. سيتم تنزيل نسخة احتياطية تلقائياً قبل الدمج.', mergeData:'🔄 دمج مع البيانات الحالية', excelExport:'📊 تصدير Excel / CSV', printPdf:'🖨 طباعة / تصدير PDF', demoReset:'⚠️ بيانات تجريبية وإعادة التهيئة', demoStudents:'تحميل تلاميذ تجريبيين', clearAll:'🗑 حذف جميع البيانات', profileTitle:'👤 ملف الأستاذ', cancel:'إلغاء', save:'حفظ', welcome:'👋 مرحباً!', startSetup:'بدء العمل بهذه الإعدادات', addStudent:'إضافة تلميذ', importStudents:'📥 استيراد لائحة التلاميذ', startImport:'بدء الاستيراد', manageClasses:'⚙️ تدبير الأقسام', addClass:'إضافة القسم', close:'إغلاق', addCourseModal:'إضافة حصة', addHolidayModal:'إضافة عطلة / يوم رسمي', activityConfig:'⚙️ إعدادات الأنشطة والسلوك', saveMaxScore:'حفظ النقطة القصوى', addCategory:'+ إضافة فئة', addAction:'+ إضافة إجراء', category:'الفئة', actionPenalty:'الإجراء / الخصم', activityHistory:'السجل', rollcallSaved:'تم تسجيل الحضور', backToToday:'العودة إلى حصص اليوم', searchStudent:'🔎 البحث عن تلميذ...', searchStudentByName:'🔎 البحث عن تلميذ بالاسم...', searchStudentName:'🔎 الاسم أو النسب...', teacherNamePlaceholder:'مثال: أحمد ...'}
   };
 
   async showFirstSetup() {
@@ -193,7 +318,7 @@ class AbsenceApp {
 
   async getDayStatus(isoDate) {
     const { start, end } = await this.getSchoolBounds();
-    if (isoDate < start) return { type: 'info', message: '📚 Avant le début des cours 2026/2027' };
+    if (isoDate < start) return { type: 'info', message: `📚 Avant le début des cours ${this.activeSchoolYear}` };
     if (isoDate > end) return { type: 'info', message: '🏁 Après la période scolaire configurée' };
     if (this.getDayOfWeek(isoDate) === 0) return { type: 'sunday', message: '📅 DIMANCHE — Aucun cours prévu' };
     const calendar = await db.getAll('calendar');
@@ -869,8 +994,13 @@ class AbsenceApp {
     }
 
     // Filtre Période
-    if (selectedPeriod === 'S1') allAttendance = allAttendance.filter(a => a.date >= '2026-09-07' && a.date <= '2027-01-31');
-    if (selectedPeriod === 'S2') allAttendance = allAttendance.filter(a => a.date >= '2027-02-01' && a.date <= '2027-06-30');
+    const [sy] = this.activeSchoolYear.split('/').map(Number);
+    const startYear = `${sy}-09-01`;
+    const s1End = `${sy+1}-01-31`;
+    const s2Start = `${sy+1}-02-01`;
+    const endYear = `${sy+1}-06-30`;
+    if (selectedPeriod === 'S1') allAttendance = allAttendance.filter(a => a.date >= startYear && a.date <= s1End);
+    if (selectedPeriod === 'S2') allAttendance = allAttendance.filter(a => a.date >= s2Start && a.date <= endYear);
 
     const totalA = allAttendance.filter(a => a.status === 'A').length;
     const totalR = allAttendance.filter(a => a.status === 'R').length;
@@ -1348,7 +1478,9 @@ class AbsenceApp {
       activityCategories: await db.getAll('activityCategories'),
       activityActions: await db.getAll('activityActions'),
       activityEvents: await db.getAll('activityEvents'),
-      settings: await db.getAll('settings')
+      settings: await db.getAll('settings'),
+      schoolYears: await db.getAll('schoolYears'),
+      schoolYear: this.activeSchoolYear
     };
 
     const jsonStr = JSON.stringify(data, null, 2);
@@ -1356,13 +1488,13 @@ class AbsenceApp {
     const url = URL.createObjectURL(blob);
     const a = document.createElement('a');
     a.href = url;
-    a.download = `absences_2026_2027_${this.getTodayISO()}.json`;
+    a.download = `gestion_classe_${this.activeSchoolYear.replace('/','_')}_${this.getTodayISO()}.json`;
     a.click();
     URL.revokeObjectURL(url);
   }
 
   async getBackupData() {
-    return {
+    const data = {
       classes: await db.getAll('classes'),
       students: await db.getAll('students'),
       timetable: await db.getAll('timetable'),
@@ -1372,8 +1504,11 @@ class AbsenceApp {
       activityCategories: await db.getAll('activityCategories'),
       activityActions: await db.getAll('activityActions'),
       activityEvents: await db.getAll('activityEvents'),
-      settings: await db.getAll('settings')
+      settings: await db.getAll('settings'),
+      schoolYears: await db.getAll('schoolYears'),
+      schoolYear: this.activeSchoolYear
     };
+    return data;
   }
 
   downloadBackupData(data, filename) {
@@ -1390,9 +1525,9 @@ class AbsenceApp {
 
   async importJSON() {
     const input=document.getElementById('import-json-file'); if(!input.files.length){alert('Veuillez choisir un fichier JSON.');return;}
-    try { const data=JSON.parse(await input.files[0].text()); if(!data.classes||!data.students||!data.timetable||!data.attendance||!data.calendar)throw new Error('Structure de sauvegarde incomplète.'); if(!confirm('La restauration remplacera les données actuelles. Continuer ?'))return;
+    try { const data=JSON.parse(await input.files[0].text()); if(data.schoolYear && data.schoolYear !== this.activeSchoolYear && !confirm(`Cette sauvegarde concerne ${data.schoolYear}, alors que l’année active est ${this.activeSchoolYear}.\n\nContinuer la restauration ?`)) return; if(!data.classes||!data.students||!data.timetable||!data.attendance||!data.calendar)throw new Error('Structure de sauvegarde incomplète.'); if(!confirm('La restauration remplacera les données actuelles. Continuer ?'))return;
       for(const store of ['classes','students','timetable','attendance','calendar','sessions','activityCategories','activityActions','activityEvents','settings']) if(db.db.objectStoreNames.contains(store)) await db.clearStore(store);
-      for(const x of data.classes)await db.put('classes',x); for(const x of data.students)await db.put('students',x); for(const x of data.timetable)await db.put('timetable',x); for(const x of data.attendance)await db.put('attendance',x); for(const x of data.calendar)await db.put('calendar',x); for(const x of (data.sessions||[]))await db.put('sessions',x); for(const x of (data.activityCategories||[]))await db.put('activityCategories',x); for(const x of (data.activityActions||[]))await db.put('activityActions',x); for(const x of (data.activityEvents||[]))await db.put('activityEvents',x); for(const x of (data.settings||[]))await db.put('settings',x);
+      for(const x of data.classes)await db.put('classes',x); for(const x of data.students)await db.put('students',x); for(const x of data.timetable)await db.put('timetable',x); for(const x of data.attendance)await db.put('attendance',x); for(const x of data.calendar)await db.put('calendar',x); for(const x of (data.sessions||[]))await db.put('sessions',x); for(const x of (data.activityCategories||[]))await db.put('activityCategories',x); for(const x of (data.activityActions||[]))await db.put('activityActions',x); for(const x of (data.activityEvents||[]))await db.put('activityEvents',x); for(const x of (data.settings||[]))await db.put('settings',x); for(const x of (data.schoolYears||[])) if(db.db.objectStoreNames.contains('schoolYears')) await db.put('schoolYears',x);
       alert('Restauration réussie.'); location.reload();
     } catch(e){alert('Erreur lors de la restauration : '+e.message);}
   }
@@ -1402,6 +1537,7 @@ class AbsenceApp {
     if(!input.files.length){alert('Veuillez choisir un fichier JSON à fusionner.');return;}
     try {
       const incoming=JSON.parse(await input.files[0].text());
+      if(incoming.schoolYear && incoming.schoolYear !== this.activeSchoolYear) { alert(`Impossible de fusionner : la sauvegarde concerne ${incoming.schoolYear}, tandis que le PC est sur ${this.activeSchoolYear}.\n\nChangez d’abord d’année scolaire ou utilisez une restauration.`); return; }
       if(!incoming.classes||!incoming.students||!incoming.timetable||!incoming.attendance||!incoming.calendar) throw new Error('Structure de sauvegarde incomplète.');
       if(!confirm('FUSION SÉCURISÉE\n\nLes anciennes données du PC seront conservées. Les nouvelles données seront ajoutées et les doublons ignorés.\n\nUne sauvegarde automatique des données actuelles du PC sera téléchargée avant la fusion. Continuer ?')) return;
 

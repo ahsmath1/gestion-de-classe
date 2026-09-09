@@ -1,4 +1,4 @@
-const CACHE_NAME = 'absence-app-v3.10-fusion-securisee-fixed-app-name';
+const CACHE_NAME = 'absence-app-v4.0-multi-annees';
 const ASSETS = [
   './', './index.html', './manifest.json', './css/style.css',
   './js/db.js', './js/app.js', './icons/icon-192.png', './icons/icon-512.png'

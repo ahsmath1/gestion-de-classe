@@ -101,3 +101,13 @@ Dans **Sauvegarde & Exports**, utilisez **« Fusionner une sauvegarde »** lorsq
 - Une **sauvegarde de sécurité du PC est automatiquement téléchargée avant la fusion**.
 
 ⚠️ **Ne pas utiliser « Restaurer les données » pour synchroniser un téléphone avec un PC déjà utilisé** : la restauration remplace les données actuelles. Utilisez **« Fusionner avec les données actuelles »**.
+
+
+## Version 4.0 — Gestion multi-années
+- Année scolaire active sélectionnable depuis l'en-tête.
+- Création d'une nouvelle année scolaire avec archivage automatique de l'année précédente.
+- Possibilité de reprendre les classes, l'emploi du temps et les catégories/actions sans copier les élèves ni les historiques.
+- Chaque année est archivée séparément dans IndexedDB et peut être réactivée sans mélanger ses données.
+- Les sauvegardes JSON indiquent l'année scolaire concernée.
+- La fusion téléphone → PC est refusée si les deux sauvegardes concernent des années différentes, afin d'éviter les mélanges.
+- Le nom de l'application reste fixe : Gestion de classe.

@@ -699,3 +699,7 @@ html[dir="rtl"] .activity-row-category{grid-template-columns:minmax(0,1fr) 112px
 html[dir="rtl"] .activity-row-category-label{grid-column:2;grid-row:1}
 html[dir="rtl"] .activity-row-actions{grid-column:1;grid-row:1}
 @media(min-width:900px){html[dir="rtl"] .activity-row-category{grid-template-columns:minmax(0,1fr) 145px}}
+
+/* Gestion multi-années */
+.school-year-selector { min-width: 105px; max-width: 130px; }
+@media (max-width: 600px) { .school-year-selector { min-width: 92px; max-width: 105px; font-size: 12px; } }

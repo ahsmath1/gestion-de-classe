@@ -13,8 +13,8 @@
 <!-- Top Navigation Header -->
 <header class="app-header">
 <div class="header-content">
-<h1 class="logo-text" id="btn-home-logo">📚 <span id="app-name-display">Gestion de classe</span> <span class="year-badge">2026/2027</span></h1>
-<div class="header-actions"><select aria-label="Langue" class="language-selector" id="language-selector"><option value="fr">🇫🇷 Français</option><option value="ar">🇲🇦 العربية</option></select>
+<h1 class="logo-text" id="btn-home-logo">📚 <span id="app-name-display">Gestion de classe</span> <span class="year-badge" id="app-year-display">2026/2027</span></h1>
+<div class="header-actions"><select aria-label="Année scolaire" class="school-year-selector" id="school-year-selector" onchange="app.switchSchoolYear(this.value)"><option value="2026/2027">2026/2027</option></select><button class="icon-btn" title="Nouvelle année scolaire" onclick="app.createSchoolYear()">➕</button><select aria-label="Langue" class="language-selector" id="language-selector"><option value="fr">🇫🇷 Français</option><option value="ar">🇲🇦 العربية</option></select>
 <span class="save-indicator" id="save-indicator">✓ Enregistré</span>
 <button aria-label="Changer de thème" class="icon-btn" id="theme-toggle">🌙</button>
 </div>
@@ -214,7 +214,7 @@
 <div class="form-group">
 <label>Période :</label>
 <select class="form-control" id="stats-period-filter" onchange="app.renderStats()">
-<option value="ALL">Toute l'année 2026/2027</option>
+<option value="ALL">Toute l'année</option>
 <option value="S1">1er Semestre (Sept-Janv)</option>
 <option value="S2">2ème Semestre (Fév-Juin)</option>
 </select>
@@ -264,7 +264,7 @@
 <section class="view" id="view-calendar">
 <div class="view-header">
 <button class="btn-back" data-i18n="home" onclick="app.navigateTo('view-home')">← Accueil</button>
-<h2 data-i18n="calendarTitle">🗓 Calendrier Scolaire 2026/2027</h2>
+<h2><span data-i18n="calendarTitlePrefix">🗓 Calendrier Scolaire</span> <span id="calendar-year-display">2026/2027</span></h2>
 </div>
 <div class="controls-card">
 <button class="btn btn-primary" data-i18n="addHoliday" onclick="app.openModal('modal-holiday')">+ Ajouter Vacances / Férié / Exception</button>
@@ -289,7 +289,7 @@
 <button class="btn btn-primary btn-block" data-i18n="exportJson" onclick="app.exportJSON()">Exporter la sauvegarde JSON</button>
 <hr/>
 <h3 data-i18n="restoreBackup">↩ Restaurer une Sauvegarde</h3>
-<p>Restaurer vos données à partir d'un fichier <code>absences_2026_2027.json</code>.</p>
+<p>Restaurer vos données à partir d'un fichier JSON de sauvegarde.</p>
 <input accept=".json" class="file-input" id="import-json-file" type="file"/>
 <button class="btn btn-warning btn-block" data-i18n="restoreData" onclick="app.importJSON()">Restaurer les données</button>
 <hr/>

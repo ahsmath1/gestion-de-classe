@@ -2,7 +2,7 @@
  * Module IndexedDB - AbsenceAppDB
  */
 const DB_NAME = 'AbsenceAppDB';
-const DB_VERSION = 5;
+const DB_VERSION = 6;
 
 class AppDatabase {
   constructor() {
@@ -59,6 +59,9 @@ class AppDatabase {
           store.createIndex('date', 'date', { unique: false });
           store.createIndex('categoryId', 'categoryId', { unique: false });
           store.createIndex('actionId', 'actionId', { unique: false });
+        }
+        if (!db.objectStoreNames.contains('schoolYears')) {
+          db.createObjectStore('schoolYears', { keyPath: 'year' });
         }
       };
 
@@ -223,7 +226,10 @@ class AppDatabase {
 
     // Marqueur de version de l'application : uniquement initialisé s'il n'existe pas.
     if (!(await this.get('settings', 'appVersion'))) {
-      await this.put('settings', { key: 'appVersion', value: '3.4.0' });
+      await this.put('settings', { key: 'appVersion', value: '4.0.0' });
+    }
+    if (!(await this.get('settings', 'activeSchoolYear'))) {
+      await this.put('settings', { key: 'activeSchoolYear', value: '2026/2027' });
     }
     if (!(await this.get('settings', 'schoolStart'))) {
       await this.put('settings', { key: 'schoolStart', value: '2026-09-07' });
