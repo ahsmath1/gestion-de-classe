@@ -1,0 +1,561 @@
+<!DOCTYPE html>
+
+<html data-theme="light" lang="fr">
+<head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" name="viewport"/>
+<title>Gestion des Absences 2026/2027</title>
+<link href="manifest.json" rel="manifest"/>
+<meta content="#2563eb" name="theme-color"/>
+<link href="css/style.css" rel="stylesheet"/>
+</head>
+<body>
+<!-- Top Navigation Header -->
+<header class="app-header">
+<div class="header-content">
+<h1 class="logo-text" id="btn-home-logo">📚 <span id="app-name-display">Gestion de classe</span> <span class="year-badge">2026/2027</span></h1>
+<div class="header-actions"><select aria-label="Langue" class="language-selector" id="language-selector"><option value="fr">🇫🇷 Français</option><option value="ar">🇲🇦 العربية</option></select>
+<span class="save-indicator" id="save-indicator">✓ Enregistré</span>
+<button aria-label="Changer de thème" class="icon-btn" id="theme-toggle">🌙</button>
+</div>
+</div>
+</header>
+<!-- Main Views Container -->
+<main class="app-container">
+<!-- VIEW 1: HOME DASHBOARD -->
+<section class="view active" id="view-home">
+<div class="welcome-card">
+<h2 id="current-date-display">Lundi 7 Septembre 2026</h2>
+<p class="subtitle" id="teacher-subject-display">Enseignant de Mathématiques</p>
+<p class="profile-line" id="teacher-profile-line">Profil : non configuré</p>
+<button class="btn btn-sm btn-secondary" data-i18n="profileButton" onclick="app.openProfile()">👤 Mon profil</button>
+</div>
+<!-- Banner Exception/Vacances/Dimanche -->
+<div class="status-banner hidden" id="day-status-banner"></div>
+<!-- Prochain cours Card -->
+<div class="next-course-card" id="next-course-card">
+<div class="card-label">PROCHAIN COURS OU COURS EN COURS</div>
+<div class="card-main-info" id="next-course-info">Recherche en cours...</div>
+<button class="btn btn-primary btn-block hidden" data-i18n="startRollcall" id="btn-start-next-course">Lancer l'appel</button>
+</div>
+<!-- Actions Rapides Grid -->
+<div class="dashboard-grid">
+<button class="dash-btn primary" onclick="app.navigateTo('view-today')">
+<span class="dash-icon">📅</span>
+<span class="dash-title">Mes cours du jour</span>
+<span class="dash-sub" data-i18n="todayCoursesSub">Saisie directe de l'appel</span>
+</button>
+<button class="dash-btn" onclick="app.navigateTo('view-students')">
+<span class="dash-icon">👨‍🎓</span>
+<span class="dash-title">Élèves</span>
+<span class="dash-sub" data-i18n="studentsSub">Gestion et listes par classe</span>
+</button>
+<button class="dash-btn" onclick="app.navigateTo('view-activities')">
+<span class="dash-icon">⭐</span>
+<span class="dash-title">Activités &amp; comportement</span>
+<span class="dash-sub" data-i18n="activitiesSub">Notes sur 20 et pénalités en un clic</span>
+</button>
+<button class="dash-btn" onclick="app.navigateTo('view-stats')">
+<span class="dash-icon">📊</span>
+<span class="dash-title">Statistiques</span>
+<span class="dash-sub" data-i18n="statsSub">Bilans et classements</span>
+</button>
+<button class="dash-btn" onclick="app.navigateTo('view-history')">
+<span class="dash-icon">📋</span>
+<span class="dash-title" data-i18n="activityHistory">Historique</span>
+<span class="dash-sub" data-i18n="historySub">Recherche et modification</span>
+</button>
+<button class="dash-btn" onclick="app.navigateTo('view-timetable')">
+<span class="dash-icon">⚙️</span>
+<span class="dash-title">Emploi du temps</span>
+<span class="dash-sub" data-i18n="timetableSub">Configuration des créneaux</span>
+</button>
+<button class="dash-btn" onclick="app.navigateTo('view-calendar')">
+<span class="dash-icon">🗓</span>
+<span class="dash-title">Calendrier</span>
+<span class="dash-sub" data-i18n="calendarSub">Vacances et jours fériés</span>
+</button>
+<button class="dash-btn" onclick="app.navigateTo('view-backup')">
+<span class="dash-icon">💾</span>
+<span class="dash-title">Sauvegarde / Export</span>
+<span class="dash-sub" data-i18n="backupSub">JSON, Excel et CSV</span>
+</button>
+</div>
+</section>
+<!-- VIEW 2: MES COURS DU JOUR -->
+<section class="view" id="view-today">
+<div class="view-header">
+<button class="btn-back" data-i18n="home" onclick="app.navigateTo('view-home')">← Accueil</button>
+<h2 data-i18n="todayTitle">Cours du jour</h2>
+</div>
+<div class="date-selector-bar">
+<button class="btn btn-sm" id="btn-prev-day">◀</button>
+<input class="date-input" id="input-today-date" type="date"/>
+<button class="btn btn-sm" id="btn-next-day">▶</button>
+<button class="btn btn-sm btn-accent" data-i18n="today" id="btn-reset-today">Aujourd'hui</button>
+</div>
+<div class="status-banner hidden" id="today-banner"></div>
+<div class="courses-list" id="today-courses-list"></div>
+</section>
+<!-- VIEW 3: ÉCRAN D'APPEL -->
+<section class="view" id="view-rollcall">
+<div class="rollcall-header-card">
+<div class="nav-courses-bar">
+<button class="btn btn-sm" id="btn-prev-course">← Cours précédent</button>
+<button class="btn btn-sm" id="btn-next-course">Cours suivant →</button>
+</div>
+<div class="rollcall-meta">
+<span class="class-badge" id="rollcall-class">3AC-12</span>
+<span class="date-badge" id="rollcall-date">07/09/2026</span>
+<span class="time-badge" id="rollcall-time">09:30 - 10:30</span>
+</div>
+<div class="search-box">
+<input data-i18n-placeholder="searchStudent" id="search-student-input" oninput="app.filterStudentsRollcall(this.value)" placeholder="🔎 Rechercher un élève..." type="text"/>
+</div>
+<div class="rollcall-counters">
+<span class="cnt-present">Présents: <b id="cnt-p">0</b></span>
+<span class="cnt-absent">Absents (A): <b id="cnt-a">0</b></span>
+<span class="cnt-retard">Retards (R): <b id="cnt-r">0</b></span>
+</div>
+</div>
+<!-- Undo Bar -->
+<div class="undo-bar hidden" id="undo-container">
+<span id="undo-text">Action enregistrée</span>
+<button class="btn btn-sm btn-warning" id="btn-undo">↶ Annuler la dernière modification</button>
+</div>
+<!-- Student Roll Call List -->
+<div class="students-rollcall-list" id="rollcall-students-list"></div>
+<div class="rollcall-footer">
+<button class="btn btn-success btn-block btn-lg" id="btn-finish-rollcall">✓ APPEL TERMINÉ</button>
+</div>
+</section>
+<!-- VIEW 4: GESTION DES ÉLÈVES -->
+<section class="view" id="view-students">
+<div class="view-header">
+<button class="btn-back" data-i18n="home" onclick="app.navigateTo('view-home')">← Accueil</button>
+<h2>👨‍🎓 Gestion des Élèves</h2>
+</div>
+<div class="controls-card">
+<div class="form-group">
+<label for="select-class-filter">Sélectionner la classe :</label>
+<select class="form-control" id="select-class-filter" onchange="app.renderStudentsList()">
+<!-- Dynamique -->
+</select>
+</div>
+<div class="action-buttons-row">
+<button class="btn btn-primary" onclick="app.openModal('modal-student')">+ Ajouter un élève</button>
+<button class="btn btn-secondary" onclick="app.openModal('modal-import')">📥 Importer (CSV/XLSX)</button>
+<button class="btn btn-secondary" data-i18n="manageClasses" onclick="app.openModal('modal-class')">⚙️ Gérer les Classes</button>
+</div>
+</div>
+<div class="search-box">
+<input data-i18n-placeholder="searchStudentByName" id="search-student-global" oninput="app.renderStudentsList()" placeholder="🔎 Rechercher un élève par nom..." type="text"/>
+</div>
+<div class="manage-list" id="students-manage-list"></div>
+</section>
+<!-- VIEW 5: FICHE ÉLÈVE DETAILLÉE -->
+<section class="view" id="view-student-detail">
+<div class="view-header">
+<button class="btn-back" data-i18n="studentsBack" onclick="app.navigateTo('view-students')">← Élèves</button>
+<h2 data-i18n="studentDetail">Fiche Individuelle</h2>
+</div>
+<div class="detail-card" id="student-detail-card"></div>
+<div class="card">
+<h3 data-i18n="activityDetail">⭐ Activités et comportement</h3>
+<div id="student-activity-summary"></div>
+<button class="btn btn-primary" data-i18n="manageActivities" onclick="app.navigateTo('view-activities')">Gérer les activités</button>
+</div>
+<h3 data-i18n="attendanceHistory">Historique de présence</h3>
+<div class="history-table-container" id="student-detail-history"></div>
+</section>
+<!-- VIEW 6: ACTIVITÉS ET COMPORTEMENT -->
+<section class="view" id="view-activities">
+<div class="view-header">
+<button class="btn-back" data-i18n="home" onclick="app.navigateTo('view-home')">← Accueil</button>
+<h2 data-i18n="activities">⭐ Activités &amp; comportement</h2>
+</div>
+<div class="controls-card">
+<div class="form-row">
+<div class="form-group">
+<label>Classe :</label>
+<select class="form-control" id="activity-class-filter" onchange="app.renderActivitiesView()"></select>
+</div>
+<div class="form-group">
+<label>Recherche :</label>
+<input class="form-control" data-i18n-placeholder="searchStudentName" id="activity-student-search" oninput="app.renderActivitiesView()" placeholder="🔎 Nom ou prénom..."/>
+</div>
+</div>
+<div class="action-buttons-row activity-toolbar">
+<button class="btn btn-secondary" data-i18n="configure" onclick="app.openModal('modal-activity-settings'); app.renderActivitySettings()">⚙️ Configurer</button>
+<button class="btn btn-warning" data-i18n="newPeriod" onclick="app.resetActivityPeriod()">↻ Nouvelle période</button>
+<button class="btn btn-primary" data-i18n="courseMode" id="activity-mode-toggle" onclick="app.toggleActivityClassMode()">⚡ Mode cours</button>
+</div>
+<div class="activity-quick-help">💡 <b>Mode cours :</b> touchez directement une pénalité. La note se met à jour instantanément.</div>
+</div>
+<div class="card help-text">
+        Chaque élève commence à <b>20/20</b>. Un clic sur une action applique automatiquement la pénalité configurée. Les pénalités sont conservées dans l'historique et peuvent être annulées.
+      </div>
+<div class="activities-students-list" id="activities-students-list"></div>
+</section>
+<!-- VIEW 7: STATISTIQUES -->
+<section class="view" id="view-stats">
+<div class="view-header">
+<button class="btn-back" data-i18n="home" onclick="app.navigateTo('view-home')">← Accueil</button>
+<h2 data-i18n="statsTitle">📊 Statistiques &amp; Bilans</h2>
+</div>
+<div class="controls-card">
+<div class="form-row">
+<div class="form-group">
+<label>Classe :</label>
+<select class="form-control" id="stats-class-filter" onchange="app.renderStats()">
+<option value="ALL">Toutes les classes</option>
+</select>
+</div>
+<div class="form-group">
+<label>Période :</label>
+<select class="form-control" id="stats-period-filter" onchange="app.renderStats()">
+<option value="ALL">Toute l'année 2026/2027</option>
+<option value="S1">1er Semestre (Sept-Janv)</option>
+<option value="S2">2ème Semestre (Fév-Juin)</option>
+</select>
+</div>
+</div>
+</div>
+<div class="stats-summary-grid" id="stats-summary-cards"></div>
+<h3>Élèves les plus souvent absents / en retard</h3>
+<div class="stats-top-list" id="stats-top-list"></div>
+</section>
+<!-- VIEW 7: HISTORIQUE -->
+<section class="view" id="view-history">
+<div class="view-header">
+<button class="btn-back" data-i18n="home" onclick="app.navigateTo('view-home')">← Accueil</button>
+<h2 data-i18n="historyTitle">📋 Historique des Appels</h2>
+</div>
+<div class="controls-card">
+<div class="form-row">
+<div class="form-group">
+<label>Classe :</label>
+<select class="form-control" id="hist-class-filter" onchange="app.renderHistory()">
+<option value="ALL">Toutes</option>
+</select>
+</div>
+<div class="form-group">
+<label>Statut :</label>
+<select class="form-control" id="hist-status-filter" onchange="app.renderHistory()">
+<option value="ALL">Tous (A &amp; R)</option>
+<option value="A">Absences uniquement (A)</option>
+<option value="R">Retards uniquement (R)</option>
+</select>
+</div>
+</div>
+</div>
+<div class="history-list" id="history-records-list"></div>
+</section>
+<!-- VIEW 8: EMPLOI DU TEMPS -->
+<section class="view" id="view-timetable">
+<div class="view-header">
+<button class="btn-back" data-i18n="home" onclick="app.navigateTo('view-home')">← Accueil</button>
+<h2 data-i18n="timetableTitle">⚙️ Configuration Emploi du Temps</h2>
+</div>
+<button class="btn btn-primary btn-block" data-i18n="addCourse" onclick="app.openModal('modal-course')">+ Ajouter un créneau</button>
+<div class="timetable-editor-list" id="timetable-editor-list"></div>
+</section>
+<!-- VIEW 9: CALENDRIER SCOLAIRE -->
+<section class="view" id="view-calendar">
+<div class="view-header">
+<button class="btn-back" data-i18n="home" onclick="app.navigateTo('view-home')">← Accueil</button>
+<h2 data-i18n="calendarTitle">🗓 Calendrier Scolaire 2026/2027</h2>
+</div>
+<div class="controls-card">
+<button class="btn btn-primary" data-i18n="addHoliday" onclick="app.openModal('modal-holiday')">+ Ajouter Vacances / Férié / Exception</button>
+</div>
+<div class="calendar-events-list" id="calendar-events-list"></div>
+</section>
+<!-- VIEW 10: SAUVEGARDE ET EXPORT -->
+<section class="view" id="view-backup">
+<div class="view-header">
+<button class="btn-back" data-i18n="home" onclick="app.navigateTo('view-home')">← Accueil</button>
+<h2 data-i18n="backupTitle">💾 Sauvegarde &amp; Exports</h2>
+</div>
+<div class="card backup-card">
+<h3 data-i18n="teacherProfile">👤 Profil enseignant</h3>
+<p>Chaque enseignant peut utiliser le même lien avec ses propres classes, élèves et emploi du temps. Les données restent locales sur son appareil.</p>
+<div class="profile-summary" id="profile-summary"></div>
+<button class="btn btn-secondary btn-block" data-i18n="editProfile" onclick="app.openProfile()">Configurer / modifier mon profil</button>
+</div>
+<div class="card backup-card">
+<h3 data-i18n="fullBackup">💾 Sauvegarde Complète (JSON)</h3>
+<p>Téléchargez une copie intégrale de toutes vos données (élèves, appels, emploi du temps, calendrier).</p>
+<button class="btn btn-primary btn-block" data-i18n="exportJson" onclick="app.exportJSON()">Exporter la sauvegarde JSON</button>
+<hr/>
+<h3 data-i18n="restoreBackup">↩ Restaurer une Sauvegarde</h3>
+<p>Restaurer vos données à partir d'un fichier <code>absences_2026_2027.json</code>.</p>
+<input accept=".json" class="file-input" id="import-json-file" type="file"/>
+<button class="btn btn-warning btn-block" data-i18n="restoreData" onclick="app.importJSON()">Restaurer les données</button>
+<hr/>
+<h3 data-i18n="mergeBackup">🔄 Fusionner une sauvegarde</h3>
+<p data-i18n="mergeBackupHelp">Ajoute les données du téléphone aux données du PC sans supprimer les anciennes données. Une sauvegarde automatique du PC sera téléchargée avant la fusion.</p>
+<button class="btn btn-success btn-block" data-i18n="mergeData" onclick="app.mergeJSON()">🔄 Fusionner avec les données actuelles</button>
+</div>
+<div class="card backup-card">
+<h3 data-i18n="excelExport">📊 Export Excel / CSV</h3>
+<p>Générez des rapports directement ouvrables dans Microsoft Excel.</p>
+<button class="btn btn-secondary btn-block" onclick="app.exportCSV('records')">Export 1 : Tous les événements (A/R)</button>
+<button class="btn btn-secondary btn-block" onclick="app.exportCSV('students_summary')">Export 2 : Bilan par élève</button>
+<button class="btn btn-secondary btn-block" onclick="app.exportCSV('class_summary')">Export 3 : Bilan global par classe</button>
+<button class="btn btn-secondary btn-block" data-i18n="printPdf" onclick="window.print()">🖨 Imprimer / Exporter en PDF</button>
+</div>
+<div class="card backup-card danger-zone">
+<h3 data-i18n="demoReset">⚠️ Données de Démonstration &amp; Réinitialisation</h3>
+<button class="btn btn-secondary btn-block" data-i18n="demoStudents" onclick="app.loadDemoData()">Charger des Élèves de Démonstration</button>
+<button class="btn btn-danger btn-block" data-i18n="clearAll" onclick="app.clearAllData()">🗑 Effacer TOUTES les données</button>
+</div>
+</section>
+</main>
+<!-- MODALS -->
+<!-- Modal Profil Enseignant -->
+<div class="modal" id="modal-profile">
+<div class="modal-content">
+<h3 data-i18n="profileTitle">👤 Mon profil enseignant</h3>
+<p class="help-text">Le profil sert uniquement à identifier votre configuration sur cet appareil. Il n'y a aucun compte en ligne.</p>
+<div class="form-group">
+<label>Nom / prénom de l'enseignant (facultatif) :</label>
+<input class="form-control" data-i18n-placeholder="teacherNamePlaceholder" id="profile-teacher-name" placeholder="ex. Ahmed EL ..." type="text"/>
+</div><div class="form-group"><label data-i18n="subjectLabel">Matière enseignée :</label><input class="form-control" id="profile-subject" placeholder="ex. Mathématiques" type="text"/></div><div class="form-group"><label data-i18n="languageLabel">Langue de l’application :</label><select class="form-control" id="profile-language"><option value="fr">🇫🇷 Français</option><option value="ar">🇲🇦 العربية</option></select></div>
+<div class="card" style="margin-top:12px;">
+<b>Votre configuration actuelle</b>
+<div id="profile-class-list" style="margin-top:8px;"></div>
+<p class="help-text">Pour modifier les classes : « Élèves → Gérer les Classes ». Pour modifier l'emploi du temps : « Emploi du temps ».</p>
+</div>
+<div class="modal-actions">
+<button class="btn btn-secondary" data-i18n="cancel" onclick="app.closeModal('modal-profile')">Annuler</button>
+<button class="btn btn-primary" data-i18n="save" onclick="app.saveProfile()">Enregistrer</button>
+</div>
+</div>
+</div>
+<!-- Assistant première utilisation -->
+<div class="modal" id="modal-welcome-profile">
+<div class="modal-content">
+<h3 data-i18n="welcome">👋 Bienvenue !</h3>
+<p>Cette application peut être utilisée par plusieurs enseignants avec le même lien. Chacun possède sa propre configuration locale.</p>
+<div class="form-group">
+<label>Votre nom (facultatif) :</label>
+<input class="form-control" id="welcome-teacher-name" placeholder="ex. Mme / M. ..." type="text"/>
+</div><div class="form-group"><label data-i18n="welcomeSubjectLabel">Votre matière :</label><input class="form-control" id="welcome-subject" placeholder="ex. Mathématiques" type="text"/></div><div class="form-group"><label data-i18n="languageLabel">Langue :</label><select class="form-control" id="welcome-language"><option value="fr">🇫🇷 Français</option><option value="ar">🇲🇦 العربية</option></select></div>
+<div class="card">
+<b>Classes actuellement proposées</b>
+<div id="welcome-class-list" style="margin-top:8px;"></div>
+<p class="help-text">Si ce ne sont pas vos classes, vous pourrez les supprimer et en ajouter dans « Élèves → Gérer les Classes ».</p>
+</div>
+<div class="modal-actions">
+<button class="btn btn-primary btn-block" data-i18n="startSetup" onclick="app.finishFirstSetup()">Commencer avec cette configuration</button>
+</div>
+</div>
+</div>
+<!-- Modal Élève (Ajout/Edition) -->
+<div class="modal" id="modal-student">
+<div class="modal-content">
+<h3 data-i18n="addStudent" id="modal-student-title">Ajouter un Élève</h3>
+<input id="student-id" type="hidden"/>
+<div class="form-group">
+<label>Classe :</label>
+<select class="form-control" id="student-class-id"></select>
+</div>
+<div class="form-group">
+<label>Nom :</label>
+<input class="form-control" id="student-nom" placeholder="ex: ALAOUI" type="text"/>
+</div>
+<div class="form-group">
+<label>Prénom :</label>
+<input class="form-control" id="student-prenom" placeholder="ex: Ahmed" type="text"/>
+</div>
+<div class="modal-actions">
+<button class="btn btn-secondary" data-i18n="cancel" onclick="app.closeModal('modal-student')">Annuler</button>
+<button class="btn btn-primary" data-i18n="save" onclick="app.saveStudent()">Enregistrer</button>
+</div>
+</div>
+</div>
+<!-- Modal Importation Élèves -->
+<div class="modal" id="modal-import">
+<div class="modal-content">
+<h3 data-i18n="importStudents">📥 Importer une liste d'élèves</h3>
+<p class="help-text">Format recommandé : <code>Nom;Prénom</code>, <code>Nom,Prénom</code> ou <code>Nom Prénom</code> (1 élève par ligne). Pour Excel, enregistrez d’abord le fichier en CSV UTF-8.</p>
+<div class="form-group">
+<label>Classe de destination :</label>
+<select class="form-control" id="import-class-id"></select>
+</div>
+<div class="form-group">
+<label>Fichier CSV / Texte :</label>
+<input accept=".csv,.txt" class="file-input" id="import-file-input" type="file"/>
+</div>
+<div class="modal-actions">
+<button class="btn btn-secondary" data-i18n="cancel" onclick="app.closeModal('modal-import')">Annuler</button>
+<button class="btn btn-primary" data-i18n="startImport" onclick="app.processImport()">Lancer l'importation</button>
+</div>
+</div>
+</div>
+<!-- Modal Gestion des Classes -->
+<div class="modal" id="modal-class">
+<div class="modal-content">
+<h3 data-i18n="manageClasses">⚙️ Gérer les Classes</h3>
+<div class="form-group">
+<label>Nom de la classe :</label>
+<input class="form-control" id="new-class-name" placeholder="ex: 1AC-5" type="text"/>
+</div>
+<button class="btn btn-primary btn-block" data-i18n="addClass" onclick="app.addClass()">Ajouter la classe</button>
+<hr/>
+<div id="classes-list-manage"></div>
+<div class="modal-actions">
+<button class="btn btn-secondary" data-i18n="close" onclick="app.closeModal('modal-class')">Fermer</button>
+</div>
+</div>
+</div>
+<!-- Modal Créneau Emploi du Temps -->
+<div class="modal" id="modal-course">
+<div class="modal-content">
+<h3 data-i18n="addCourseModal" id="modal-course-title">Ajouter un Créneau</h3>
+<input id="course-id" type="hidden"/>
+<div class="form-group">
+<label>Classe :</label>
+<select class="form-control" id="course-class-id"></select>
+</div>
+<div class="form-group">
+<label>Jour :</label>
+<select class="form-control" id="course-day">
+<option value="1">Lundi</option>
+<option value="2">Mardi</option>
+<option value="3">Mercredi</option>
+<option value="4">Jeudi</option>
+<option value="5">Vendredi</option>
+<option value="6">Samedi</option>
+<option value="0">Dimanche</option>
+</select>
+</div>
+<div class="form-row">
+<div class="form-group">
+<label>Début :</label>
+<input class="form-control" id="course-start-time" type="time" value="08:30"/>
+</div>
+<div class="form-group">
+<label>Fin :</label>
+<input class="form-control" id="course-end-time" type="time" value="09:30"/>
+</div>
+</div>
+<div class="modal-actions">
+<button class="btn btn-secondary" data-i18n="cancel" onclick="app.closeModal('modal-course')">Annuler</button>
+<button class="btn btn-primary" data-i18n="save" onclick="app.saveCourse()">Enregistrer</button>
+</div>
+</div>
+</div>
+<!-- Modal Événement Calendrier -->
+<div class="modal" id="modal-holiday">
+<div class="modal-content">
+<h3 data-i18n="addHolidayModal" id="modal-holiday-title">Ajouter des Vacances / Jour Férié</h3>
+<input id="holiday-id" type="hidden"/>
+<div class="form-group">
+<label>Intitulé :</label>
+<input class="form-control" id="holiday-title" placeholder="ex: Vacances d'automne" type="text"/>
+</div>
+<div class="form-group">
+<label>Type :</label>
+<select class="form-control" id="holiday-type">
+<option value="vacation">Vacances Scolaires</option>
+<option value="holiday">Jour Férié</option>
+<option value="exceptional">Journée exceptionnelle sans cours</option>
+</select>
+</div>
+<div class="form-row">
+<div class="form-group">
+<label>Du :</label>
+<input class="form-control" id="holiday-start" type="date"/>
+</div>
+<div class="form-group">
+<label>Au :</label>
+<input class="form-control" id="holiday-end" type="date"/>
+</div>
+</div>
+<div class="modal-actions">
+<button class="btn btn-secondary" data-i18n="cancel" onclick="app.closeModal('modal-holiday')">Annuler</button>
+<button class="btn btn-primary" data-i18n="save" onclick="app.saveHoliday()">Enregistrer</button>
+</div>
+</div>
+</div>
+<!-- Modal Configuration Activités -->
+<div class="modal" id="modal-activity-settings">
+<div class="modal-content modal-wide">
+<h3 data-i18n="activityConfig">⚙️ Configuration — Activités et comportement</h3>
+<div class="card">
+<div class="form-row">
+<div class="form-group">
+<label>Note maximale :</label>
+<input class="form-control" id="activity-max-score" min="1" step="0.5" type="number" value="20"/>
+</div>
+<div class="form-group" style="display:flex;align-items:end;">
+<button class="btn btn-primary" data-i18n="saveMaxScore" onclick="app.saveActivityMaxScore()">Enregistrer la note maximale</button>
+</div>
+</div>
+<p class="help-text">Par défaut : 20/20. Le budget de chaque catégorie limite les pénalités cumulées dans cette catégorie.</p>
+</div>
+<div class="action-buttons-row">
+<button class="btn btn-primary" data-i18n="addCategory" onclick="app.openActivityCategoryForm()">+ Ajouter une catégorie</button>
+<button class="btn btn-secondary" data-i18n="addAction" onclick="app.openActivityActionForm()">+ Ajouter une action</button>
+</div>
+<div id="activity-categories-list"></div>
+<div class="modal-actions">
+<button class="btn btn-secondary" data-i18n="close" onclick="app.closeModal('modal-activity-settings')">Fermer</button>
+</div>
+</div>
+</div>
+<!-- Modal Catégorie Activités -->
+<div class="modal" id="modal-activity-category">
+<div class="modal-content">
+<h3 data-i18n="category">Catégorie</h3>
+<input id="activity-category-id" type="hidden"/>
+<div class="form-group"><label>Nom :</label><input class="form-control" id="activity-category-name" placeholder="Ex. Matériel et préparation"/></div>
+<div class="form-group"><label>Icône :</label><input class="form-control" id="activity-category-icon" value="📌"/></div>
+<div class="form-group"><label>Budget de pénalité :</label><input class="form-control" id="activity-category-max" min="0" step="0.5" type="number" value="5"/></div>
+<div class="modal-actions">
+<button class="btn btn-secondary" data-i18n="cancel" onclick="app.closeModal('modal-activity-category')">Annuler</button>
+<button class="btn btn-primary" data-i18n="save" onclick="app.saveActivityCategory()">Enregistrer</button>
+</div>
+</div>
+</div>
+<!-- Modal Action Activités -->
+<div class="modal" id="modal-activity-action">
+<div class="modal-content">
+<h3 data-i18n="actionPenalty">Action / pénalité</h3>
+<input id="activity-action-id" type="hidden"/>
+<div class="form-group"><label>Catégorie :</label><select class="form-control" id="activity-action-category"></select></div>
+<div class="form-group"><label>Libellé :</label><input class="form-control" id="activity-action-name" placeholder="Ex. Livre scolaire absent"/></div>
+<div class="form-group"><label>Pénalité :</label><input class="form-control" id="activity-action-penalty" min="0.1" step="0.1" type="number" value="0.5"/></div>
+<div class="modal-actions">
+<button class="btn btn-secondary" data-i18n="cancel" onclick="app.closeModal('modal-activity-action')">Annuler</button>
+<button class="btn btn-primary" data-i18n="save" onclick="app.saveActivityAction()">Enregistrer</button>
+</div>
+</div>
+</div>
+<!-- Modal Historique Activités -->
+<div class="modal" id="modal-activity-history">
+<div class="modal-content modal-wide">
+<h3 data-i18n="activityHistory" id="activity-history-title">Historique</h3>
+<div id="activity-history-content"></div>
+<div class="modal-actions"><button class="btn btn-secondary" data-i18n="close" onclick="app.closeModal('modal-activity-history')">Fermer</button></div>
+</div>
+</div>
+<!-- Modal Récapitulatif Appel Terminé -->
+<div class="modal" id="modal-summary">
+<div class="modal-content">
+<div class="summary-header">
+<span class="icon-success">✓</span>
+<h3 data-i18n="rollcallSaved">APPEL ENREGISTRÉ</h3>
+</div>
+<div class="summary-card" id="summary-details-card"></div>
+<div class="modal-actions">
+<button class="btn btn-primary btn-block" data-i18n="backToToday" onclick="app.closeModal('modal-summary'); app.navigateTo('view-today');">Retour aux cours du jour</button>
+</div>
+</div>
+</div>
+<script src="js/db.js"></script>
+<script src="js/app.js"></script>
+</body>
+</html>
