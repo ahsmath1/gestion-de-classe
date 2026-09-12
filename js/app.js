@@ -1099,7 +1099,22 @@ class AbsenceApp {
 
     await this.renderStudentBehaviors(student);
     await this.renderStudentGeneralRemark(student);
+    const customRemark = document.getElementById('student-custom-remark');
+    if (customRemark) customRemark.value = student.customRemark || '';
     this.navigateTo('view-student-detail');
+  }
+
+  async saveStudentCustomRemark() {
+    if (!this.currentStudentDetailId) return;
+    const st = await db.get('students', this.currentStudentDetailId);
+    if (!st) return;
+    const field = document.getElementById('student-custom-remark');
+    st.customRemark = field?.value.trim() || '';
+    await db.put('students', st);
+    await this.registerChange();
+    this.showSaveIndicator();
+    await this.renderStudentGeneralRemark(st);
+    alert(this.language === 'ar' ? 'تم حفظ الملاحظة الشخصية.' : 'Remarque personnalisée enregistrée.');
   }
 
   async saveStudentNotes() {
@@ -1476,7 +1491,8 @@ class AbsenceApp {
       ${this.buildBehaviorsReportHtml(st, esc)}
       <h2>Remarques générales</h2>
       <p>${esc(this.buildGeneralRemark(st, ev))}</p>
-      ${st.customRemark?`<p><b>Remarque personnalisée :</b> ${esc(st.customRemark)}</p>`:''}
+      ${st.customRemark ? `<div style="margin-top:12px;padding:12px;border-left:4px solid #888;background:#f7f7f7"><b>✍️ Remarque personnalisée :</b><p style="margin:6px 0 0">${esc(st.customRemark)}</p></div>` : ''}
+      ${this.buildPracticesReportHtml(st.pratiquesAttitudes, esc)}
     `);
   }
 
