@@ -1513,7 +1513,16 @@ class AbsenceApp {
   buildPracticesReportHtml(data, esc){
     const p=this.normalizePractices(data); const levels={non_evalue:'Non évalué',tres_satisfaisant:'Très satisfaisant',satisfaisant:'Satisfaisant',a_ameliorer:'À améliorer',insuffisant:'Insuffisant'};
     const ds=this.getPracticesDomains();
-    return `<h2>Pratiques et attitudes en mathématiques</h2>${ds.map(d=>{const x=p[d.id];const pos=x.positives.map(i=>d.positive[Number(i)]).filter(Boolean);const imp=x.ameliorations.map(i=>d.improve[Number(i)]).filter(Boolean);return `<div style="margin-bottom:16px;padding:10px;border:1px solid #ddd;border-radius:8px"><h3>${esc(d.name)}</h3><p><b>Niveau :</b> ${esc(levels[x.niveau]||levels.non_evalue)}</p>${pos.length?`<p><b>Points positifs :</b></p><ul>${pos.map(t=>`<li>${esc(t)}</li>`).join('')}</ul>`:''}${imp.length?`<p><b>Axes d’amélioration :</b></p><ul>${imp.map(t=>`<li>${esc(t)}</li>`).join('')}</ul>`:''}${x.remarque?`<p><b>Remarque personnelle :</b> ${esc(x.remarque)}</p>`:''}</div>`}).join('')}${p.remarqueGenerale?`<h3>Remarque générale sur les pratiques de travail</h3><p>${esc(p.remarqueGenerale)}</p>`:''}`;
+    const cards=ds.map(d=>{
+      const x=p[d.id]||{niveau:'non_evalue',positives:[],ameliorations:[],remarque:''};
+      const pos=x.positives.map(i=>d.positive[Number(i)]).filter(Boolean);
+      const imp=x.ameliorations.map(i=>d.improve[Number(i)]).filter(Boolean);
+      const hasContent=x.niveau && x.niveau!=='non_evalue' || pos.length || imp.length || x.remarque;
+      if(!hasContent) return '';
+      return `<div style="margin-bottom:16px;padding:10px;border:1px solid #ddd;border-radius:8px"><h3>${esc(d.name)}</h3><p><b>Niveau :</b> ${esc(levels[x.niveau]||levels.non_evalue)}</p>${pos.length?`<p><b>Points positifs :</b></p><ul>${pos.map(t=>`<li>${esc(t)}</li>`).join('')}</ul>`:''}${imp.length?`<p><b>Axes d’amélioration :</b></p><ul>${imp.map(t=>`<li>${esc(t)}</li>`).join('')}</ul>`:''}${x.remarque?`<p><b>Remarque personnelle :</b> ${esc(x.remarque)}</p>`:''}</div>`;
+    }).join('');
+    if(!cards && !p.remarqueGenerale) return '';
+    return `<h2>Pratiques et attitudes en mathématiques</h2>${cards}${p.remarqueGenerale?`<h3>Remarque générale sur les pratiques de travail</h3><p>${esc(p.remarqueGenerale)}</p>`:''}`;
   }
 
   openPrintReport(title,html){ const w=window.open('','_blank','width=900,height=700'); if(!w){alert('Autorisez les fenêtres pop-up pour imprimer le rapport.');return;} w.document.write(`<html><head><title>${this.escapeHtml(title)}</title><meta charset="utf-8"><style>body{font-family:Arial,sans-serif;padding:35px;line-height:1.5}h1{margin-bottom:4px}h2{border-bottom:1px solid #ddd;padding-bottom:5px}@media print{body{padding:10px}}</style></head><body>${html}<script>window.onload=()=>window.print()<\/script></body></html>`); w.document.close(); }
@@ -1928,7 +1937,7 @@ class AbsenceApp {
         </div>
       </div>
       <div class="config-sublist">
-        ${actions.filter(a=>a.categoryId===c.id).map(a=>`<div class="config-subitem"><span>${this.escapeHtml(a.name)} <b>−${Number(a.penalty).toFixed(2)}</b></span><span><button class="btn btn-sm btn-secondary" onclick="app.editActivityAction('${a.id}')">✏️</button><button class="btn btn-sm btn-danger" onclick="app.deleteActivityAction('${a.id}')">🗑</button></span></div>`).join('')}
+        ${actions.filter(a=>a.categoryId===c.id).map(a=>{const isReward=a.type==='reward';const sign=isReward?'+':'−';const icon=isReward?'➕':'➖';return `<div class="config-subitem"><span>${icon} ${this.escapeHtml(a.name)} <b>${sign}${Number(a.penalty).toFixed(2)}</b></span><span><button class="btn btn-sm btn-secondary" onclick="app.editActivityAction('${a.id}')">✏️</button><button class="btn btn-sm btn-danger" onclick="app.deleteActivityAction('${a.id}')">🗑</button></span></div>`}).join('')}
         <button class="btn btn-sm btn-secondary" onclick="app.openActivityActionForm('', '${c.id}')">+ Ajouter une action</button>
       </div>`).join('');
   }
