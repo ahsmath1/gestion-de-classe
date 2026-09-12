@@ -14,7 +14,7 @@
 <header class="app-header">
 <div class="header-content">
 <h1 class="logo-text" id="btn-home-logo">📚 <span id="app-name-display">Gestion de classe</span> <span class="year-badge" id="app-year-display">2026/2027</span></h1>
-<div class="header-actions"><select aria-label="Année scolaire" class="school-year-selector" id="school-year-selector" onchange="app.switchSchoolYear(this.value)"><option value="2026/2027">2026/2027</option></select><button class="icon-btn" title="Nouvelle année scolaire" onclick="app.createSchoolYear()">➕</button><select aria-label="Langue" class="language-selector" id="language-selector"><option value="fr">🇫🇷 Français</option><option value="ar">🇲🇦 العربية</option></select>
+<div class="header-actions"><select aria-label="Année scolaire" class="school-year-selector" id="school-year-selector" onchange="app.switchSchoolYear(this.value)"><option value="2026/2027">2026/2027</option></select><button class="icon-btn" title="Nouvelle année scolaire" onclick="app.createSchoolYear()">➕</button><button class="icon-btn" id="global-search-btn" title="Recherche globale" aria-label="Recherche globale">🔎</button><button class="icon-btn" id="express-call-btn" title="Appel express" aria-label="Appel express">⚡</button><select aria-label="Langue" class="language-selector" id="language-selector"><option value="fr">🇫🇷 Français</option><option value="ar">🇲🇦 العربية</option></select>
 <span class="save-indicator" id="save-indicator">✓ Enregistré</span>
 <button aria-label="Changer de thème" class="icon-btn" id="theme-toggle">🌙</button>
 </div>
@@ -29,6 +29,10 @@
 <p class="subtitle" id="teacher-subject-display">Enseignant de Mathématiques</p>
 <p class="profile-line" id="teacher-profile-line">Profil : non configuré</p>
 <button class="btn btn-sm btn-secondary" data-i18n="profileButton" onclick="app.openProfile()">👤 Mon profil</button>
+</div>
+<div class="card quick-favorites-card" id="quick-favorites-card">
+<div class="quick-favorites-head"><div><h3>⭐ Favoris</h3><p class="help-text">Vos classes les plus utilisées, accessibles en un toucher.</p></div></div>
+<div id="quick-favorites-list" class="quick-favorites-list"></div>
 </div>
 <!-- Banner Exception/Vacances/Dimanche -->
 <div class="status-banner hidden" id="day-status-banner"></div>
@@ -80,6 +84,10 @@
 <span class="dash-title">Sauvegarde / Export</span>
 <span class="dash-sub" data-i18n="backupSub">JSON, Excel et CSV</span>
 </button>
+</div>
+<div class="dashboard-insights">
+  <div class="card dashboard-today-summary" id="dashboard-today-summary"></div>
+  <div class="card dashboard-alerts" id="dashboard-alerts"></div>
 </div>
 </section>
 <!-- VIEW 2: MES COURS DU JOUR -->
@@ -167,6 +175,18 @@
 </div>
 <h3 data-i18n="attendanceHistory">Historique de présence</h3>
 <div class="history-table-container" id="student-detail-history"></div>
+<div class="card student-practices-card" id="student-behaviors-card">
+<h3 data-i18n="behaviorsTitle">📐 Pratiques et comportements en mathématiques</h3>
+<p class="help-text" data-i18n="behaviorsHelp">Cochez uniquement les comportements qui ne sont pas encore maîtrisés chez l'élève. Une case cochée = un point à améliorer. Les cases non cochées n'apparaissent pas comme des problèmes.</p>
+<div id="student-behaviors-container"></div>
+<button class="btn btn-primary" id="student-behaviors-save-btn" data-i18n="behaviorsSaveBtn" onclick="app.saveStudentBehaviors()">💾 Enregistrer les comportements</button>
+</div>
+<div class="card student-remarks-card" id="student-remarks-card">
+<h3 data-i18n="remarksTitle">🗒 Remarques générales</h3>
+<p class="help-text" data-i18n="remarksHelp">Générées automatiquement à partir des pénalités, des devoirs maison, du travail à domicile et des comportements cochés ci-dessus.</p>
+<div class="general-remark-box" id="student-general-remark"></div>
+<button class="btn btn-secondary" data-i18n="printStudentReportBtn" onclick="app.printStudentReport()">📄 Rapport de l'élève</button>
+</div>
 </section>
 <!-- VIEW 6: ACTIVITÉS ET COMPORTEMENT -->
 <section class="view" id="view-activities">
@@ -224,6 +244,8 @@
 <div class="stats-summary-grid" id="stats-summary-cards"></div>
 <h3>Élèves les plus souvent absents / en retard</h3>
 <div class="stats-top-list" id="stats-top-list"></div>
+<div class="card" style="margin-top:14px;"><h3>🚨 Élèves à surveiller</h3><div id="stats-alert-list"></div></div>
+<div class="action-buttons-row" style="margin-top:10px;"><button class="btn btn-secondary" onclick="app.printClassReport()">📄 Rapport de classe</button></div>
 </section>
 <!-- VIEW 7: HISTORIQUE -->
 <section class="view" id="view-history">
@@ -296,6 +318,7 @@
 <h3 data-i18n="mergeBackup">🔄 Fusionner une sauvegarde</h3>
 <p data-i18n="mergeBackupHelp">Ajoute les données du téléphone aux données du PC sans supprimer les anciennes données. Une sauvegarde automatique du PC sera téléchargée avant la fusion.</p>
 <button class="btn btn-success btn-block" data-i18n="mergeData" onclick="app.mergeJSON()">🔄 Fusionner avec les données actuelles</button>
+<button class="btn btn-secondary btn-block" onclick="app.restoreLocalAutoBackup()">♻️ Restaurer la dernière sauvegarde automatique locale</button>
 </div>
 <div class="card backup-card">
 <h3 data-i18n="excelExport">📊 Export Excel / CSV</h3>
@@ -314,6 +337,19 @@
 </main>
 <!-- MODALS -->
 <!-- Modal Profil Enseignant -->
+<nav class="bottom-nav" id="bottom-nav" aria-label="Navigation rapide">
+<button data-view="view-home" onclick="app.navigateTo('view-home')"><span>⌂</span><small>Accueil</small></button>
+<button data-view="view-today" onclick="app.navigateTo('view-today')"><span>📅</span><small>Cours</small></button>
+<button class="express-nav" onclick="app.quickExpressCall()"><span>⚡</span><small>Appel</small></button>
+<button data-view="view-students" onclick="app.navigateTo('view-students')"><span>👨‍🎓</span><small>Élèves</small></button>
+<button onclick="app.openGlobalSearch()"><span>🔎</span><small>Recherche</small></button>
+</nav>
+<div class="modal" id="modal-global-search">
+<div class="modal-content global-search-modal">
+<div class="global-search-head"><h3>🔎 Recherche globale</h3><button class="icon-btn" onclick="app.closeModal('modal-global-search')">✕</button></div>
+<input class="form-control" id="global-search-input" type="search" placeholder="Rechercher une classe ou un élève..." autocomplete="off">
+<div id="global-search-results" class="global-search-results"></div>
+</div></div>
 <div class="modal" id="modal-profile">
 <div class="modal-content">
 <h3 data-i18n="profileTitle">👤 Mon profil enseignant</h3>
@@ -322,6 +358,8 @@
 <label>Nom / prénom de l'enseignant (facultatif) :</label>
 <input class="form-control" data-i18n-placeholder="teacherNamePlaceholder" id="profile-teacher-name" placeholder="ex. Ahmed EL ..." type="text"/>
 </div><div class="form-group"><label data-i18n="subjectLabel">Matière enseignée :</label><input class="form-control" id="profile-subject" placeholder="ex. Mathématiques" type="text"/></div><div class="form-group"><label data-i18n="languageLabel">Langue de l’application :</label><select class="form-control" id="profile-language"><option value="fr">🇫🇷 Français</option><option value="ar">🇲🇦 العربية</option></select></div>
+<div class="form-group"><label>📱 Taille des boutons :</label><select class="form-control" id="profile-ui-scale"><option value="normal">Normale</option><option value="large">Grande</option><option value="xlarge">Très grande (mode cours)</option></select></div>
+<div class="form-group"><label>💾 Sauvegarde automatique :</label><select class="form-control" id="profile-auto-backup"><option value="off">Désactivée</option><option value="10">Toutes les 10 modifications</option><option value="20">Toutes les 20 modifications</option></select><small class="help-text">La sauvegarde automatique reste sur cet appareil. Une sauvegarde de sécurité est aussi créée avant chaque fusion.</small></div>
 <div class="card" style="margin-top:12px;">
 <b>Votre configuration actuelle</b>
 <div id="profile-class-list" style="margin-top:8px;"></div>

@@ -703,3 +703,44 @@ html[dir="rtl"] .activity-row-actions{grid-column:1;grid-row:1}
 /* Gestion multi-années */
 .school-year-selector { min-width: 105px; max-width: 130px; }
 @media (max-width: 600px) { .school-year-selector { min-width: 92px; max-width: 105px; font-size: 12px; } }
+
+/* v4.1 — confort, suivi et rapports */
+.dashboard-insights{display:grid;grid-template-columns:1.2fr 1fr;gap:12px;margin-top:14px}
+.insight-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:8px;margin-top:10px}.insight-grid>div{padding:10px;border:1px solid var(--border);border-radius:10px;text-align:center}.insight-grid b{display:block;font-size:1.4rem}.insight-grid span{font-size:.82rem}.alert-line{padding:7px 0;border-bottom:1px solid var(--border)}
+.student-notes-card textarea{resize:vertical;min-height:80px}
+.ui-large button,.ui-large .btn-toggle,.ui-large .activity-action-btn{min-height:48px}.ui-large .btn{padding:11px 14px}.ui-xlarge button,.ui-xlarge .btn-toggle,.ui-xlarge .activity-action-btn{min-height:58px;font-size:1rem}.ui-xlarge .btn{padding:14px 16px;font-size:1rem}.ui-xlarge .activity-row-actions{gap:8px}.ui-xlarge .activity-row-actions .compact-action{min-width:125px}
+@media(max-width:700px){.dashboard-insights{grid-template-columns:1fr}.insight-grid{grid-template-columns:repeat(2,1fr)}}
+
+/* Activités : afficher les pénalités uniquement après clic sur le nom */
+.activity-student-details { display: none; }
+.activity-student-card.activity-student-expanded .activity-student-details { display: block; }
+.activity-student-toggle { cursor: pointer; }
+.activity-student-toggle:focus { outline: 2px solid var(--accent-a); outline-offset: 2px; }
+.activity-student-card:not(.activity-student-expanded) .activity-student-name::after,
+.activity-student-card:not(.activity-student-expanded) .activity-row-name::after { content: ' ▸'; opacity: .65; }
+.activity-student-card.activity-student-expanded .activity-student-name::after,
+.activity-student-card.activity-student-expanded .activity-row-name::after { content: ' ▾'; opacity: .65; }
+
+/* v4.4 — Pratiques et attitudes en mathématiques (ancien système, conservé pour compatibilité) */
+.student-practices-card{margin-top:14px}.practice-domain-card{border:1px solid var(--border);border-radius:12px;padding:12px;margin:10px 0;background:var(--card)}.practice-domain-card h4{margin:0 0 10px;font-size:1rem}.practice-level{display:grid;grid-template-columns:120px minmax(0,220px);gap:8px;align-items:center;margin-bottom:10px}.practice-cols{display:grid;grid-template-columns:1fr 1fr;gap:14px}.practice-cols>div{min-width:0}.practice-check{display:flex;gap:8px;align-items:flex-start;margin:8px 0;line-height:1.35;cursor:pointer}.practice-check input{width:20px;height:20px;flex:0 0 auto;margin-top:1px}.practice-note{margin-top:6px}@media(max-width:700px){.practice-cols{grid-template-columns:1fr}.practice-level{grid-template-columns:1fr}.practice-domain-card{padding:10px}.practice-check{margin:10px 0}.practice-check input{width:22px;height:22px}}
+
+/* v4.5 — Pratiques et comportements en mathématiques (cases à cocher, sans niveau) */
+.behavior-domain-card{border:1px solid var(--border);border-radius:12px;padding:12px;margin:10px 0;background:var(--card)}
+.behavior-domain-card h4{margin:0 0 8px;font-size:1rem}
+.behavior-check-list{display:flex;flex-direction:column;gap:2px}
+.behavior-check-item{display:flex;gap:10px;align-items:center;min-height:44px;padding:6px 4px;line-height:1.35;cursor:pointer;border-radius:8px}
+.behavior-check-item:active{background:var(--bg-alt,rgba(0,0,0,.04))}
+.behavior-check-item input{width:24px;height:24px;flex:0 0 auto;cursor:pointer}
+.general-remark-box{border:1px solid var(--border);border-radius:10px;padding:12px;background:var(--card);min-height:48px;line-height:1.5;white-space:pre-line}
+@media(max-width:700px){.behavior-check-item{min-height:48px}.behavior-check-item input{width:26px;height:26px}}
+html[dir="rtl"] .behavior-check-item{flex-direction:row-reverse}
+
+/* v4.6 — ergonomie et rapidité enseignant */
+button,.btn,.dash-btn,.btn-toggle,input,select,textarea{touch-action:manipulation;-webkit-tap-highlight-color:transparent}
+button:active,.btn:active,.dash-btn:active{transform:scale(.985)}
+button:focus-visible,input:focus-visible,select:focus-visible,textarea:focus-visible{outline:3px solid rgba(37,99,235,.22);outline-offset:2px}
+.quick-favorites-card{margin:12px 0}.quick-favorites-head{margin-bottom:8px}.quick-favorites-head h3{margin:0 0 3px}.quick-favorites-list{display:flex;gap:8px;flex-wrap:wrap}.favorite-chip{min-height:44px;padding:8px 12px;border:1px solid var(--border);border-radius:10px;background:var(--card);color:var(--text);font-weight:700;cursor:pointer}
+.global-search-modal{max-width:620px}.global-search-head{display:flex;align-items:center;justify-content:space-between;margin-bottom:10px}.global-search-head h3{margin:0}.global-search-results{margin-top:12px;max-height:55vh;overflow:auto}.global-search-results h4{font-size:.8rem;color:var(--text-muted);text-transform:uppercase;margin:12px 2px 6px}.global-result{display:flex;gap:5px;margin:5px 0}.global-result button{min-height:46px;border:1px solid var(--border);background:var(--card);color:var(--text);padding:8px 10px;border-radius:9px;cursor:pointer;text-align:left}.global-result>button:first-child{flex:1}.global-result .star-result{min-width:46px;text-align:center}.global-result.single{width:100%;margin:5px 0}
+.bottom-nav{display:none}.express-nav{font-weight:800!important}
+.quick-attention .course-card{animation:quickAttention .45s ease 2}@keyframes quickAttention{50%{transform:translateX(4px)}}
+@media(max-width:700px){body{padding-bottom:74px}.bottom-nav{display:grid;position:fixed;z-index:200;left:0;right:0;bottom:0;height:66px;padding:4px 6px max(4px,env(safe-area-inset-bottom));grid-template-columns:repeat(5,1fr);background:var(--card);border-top:1px solid var(--border);box-shadow:0 -3px 14px rgba(0,0,0,.08)}.bottom-nav button{border:0;background:transparent;color:var(--text-muted);border-radius:9px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:2px;min-height:56px}.bottom-nav button.active{color:var(--primary);background:var(--bg)}.bottom-nav span{font-size:1.2rem;line-height:1}.bottom-nav small{font-size:.68rem;font-weight:700}.header-actions{gap:4px}.header-actions .icon-btn{min-width:42px;min-height:42px}.quick-favorites-list{overflow-x:auto;flex-wrap:nowrap;padding-bottom:3px}.favorite-chip{white-space:nowrap}}

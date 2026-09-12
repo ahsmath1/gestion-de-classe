@@ -9,15 +9,21 @@ class AbsenceApp {
     this.activeCourse = null; // { courseId, classId, date, startTime, endTime }
     this.lastAction = null; // Pour annulation rapide
     this.rollcallState = {}; // { studentId: 'A' | 'R' | null }
-    this.activityClassMode = true; // Mode compact pour la saisie rapide pendant le cours
+    this.activityClassMode = true; // Mode compact
+    this.activityExpandedStudents = new Set(); // élèves dont les détails sont ouverts
     this.language = 'fr';
     this.activeSchoolYear = '2026/2027';
+    this.changeCounter = 0;
+    this.currentStudentDetailId = null;
+    this.favoriteClasses = [];
   }
 
   async init() {
     await db.init();
     await this.loadActiveSchoolYear();
     await this.loadLanguage();
+    await this.loadFavorites();
+    await this.applyUserInterfacePreferences();
     this.setupTheme();
     this.registerServiceWorker();
     this.bindEvents();
@@ -210,11 +216,12 @@ class AbsenceApp {
     if (this.currentView === 'view-timetable') await this.renderTimetableEditor();
     if (this.currentView === 'view-calendar') await this.renderCalendarView();
     if (this.currentView === 'view-today') await this.renderTodayCourses();
+    if (this.currentView === 'view-student-detail' && this.currentStudentDetailId) await this.showStudentDetail(this.currentStudentDetailId);
   }
 
   i18n = {
-    fr: { subjectLabel:'Matière enseignée :', languageLabel:'Langue de l’application :', welcomeSubjectLabel:'Votre matière :', profilePrefix:'Profil :', profileNotConfigured:'Profil : non configuré', teacherOf:'Enseignant de', teacher:'Enseignant', teacherNotEntered:'Enseignant non renseigné', classesConfigured:'classe(s) configurée(s)', profileButton:'👤 Mon profil', startRollcall:"Lancer l'appel", todayCourses:'📅 Mes cours du jour', todayCoursesSub:"Saisie directe de l'appel", students:'👨‍🎓 Élèves', studentsSub:'Gestion et listes par classe', activities:'⭐ Activités & comportement', activitiesSub:'Notes sur 20 et pénalités en un clic', stats:'📊 Statistiques', statsSub:'Bilans et classements', history:'📋 Historique', historySub:'Recherche et modification', timetable:'⚙️ Emploi du temps', timetableSub:'Configuration des créneaux', calendar:'🗓 Calendrier', calendarSub:'Vacances et jours fériés', backup:'💾 Sauvegarde / Export', backupSub:'JSON, Excel et CSV', home:'← Accueil', todayTitle:'Cours du jour', today:"Aujourd'hui", studentsBack:'← Élèves', studentDetail:'Fiche Individuelle', activityDetail:'⭐ Activités et comportement', manageActivities:'Gérer les activités', attendanceHistory:'Historique de présence', configure:'⚙️ Configurer', newPeriod:'↻ Nouvelle période', courseMode:'⚡ Mode cours', statsTitle:'📊 Statistiques & Bilans', historyTitle:'📋 Historique des Appels', timetableTitle:'⚙️ Configuration Emploi du Temps', addCourse:'+ Ajouter un créneau', calendarTitlePrefix:'🗓 Calendrier Scolaire', addHoliday:'+ Ajouter Vacances / Férié / Exception', backupTitle:'💾 Sauvegarde & Exports', teacherProfile:'👤 Profil enseignant', editProfile:'Configurer / modifier mon profil', fullBackup:'💾 Sauvegarde Complète (JSON)', exportJson:'Exporter la sauvegarde JSON', restoreBackup:'↩ Restaurer une Sauvegarde', restoreData:'Restaurer les données', mergeBackup:'🔄 Fusionner une sauvegarde', mergeBackupHelp:'Ajoute les données du téléphone aux données du PC sans supprimer les anciennes données. Une sauvegarde automatique du PC sera téléchargée avant la fusion.', mergeData:'🔄 Fusionner avec les données actuelles', excelExport:'📊 Export Excel / CSV', printPdf:'🖨 Imprimer / Exporter en PDF', demoReset:'⚠️ Données de Démonstration & Réinitialisation', demoStudents:'Charger des Élèves de Démonstration', clearAll:'🗑 Effacer TOUTES les données', profileTitle:'👤 Mon profil enseignant', cancel:'Annuler', save:'Enregistrer', welcome:'👋 Bienvenue !', startSetup:'Commencer avec cette configuration', addStudent:'Ajouter un Élève', importStudents:"📥 Importer une liste d'élèves", startImport:"Lancer l'importation", manageClasses:'⚙️ Gérer les Classes', addClass:'Ajouter la classe', close:'Fermer', addCourseModal:'Ajouter un Créneau', addHolidayModal:'Ajouter des Vacances / Jour Férié', activityConfig:'⚙️ Configuration — Activités et comportement', saveMaxScore:'Enregistrer la note maximale', addCategory:'+ Ajouter une catégorie', addAction:'+ Ajouter une action', category:'Catégorie', actionPenalty:'Action / pénalité', activityHistory:'Historique', rollcallSaved:'APPEL ENREGISTRÉ', backToToday:'Retour aux cours du jour', searchStudent:'🔎 Rechercher un élève...', searchStudentByName:'🔎 Rechercher un élève par nom...', searchStudentName:'🔎 Nom ou prénom...', teacherNamePlaceholder:'ex. Ahmed EL ...'},
-    ar: { subjectLabel:'المادة التي تدرسها:', languageLabel:'لغة التطبيق:', welcomeSubjectLabel:'المادة التي تدرسها:', profilePrefix:'الملف الشخصي:', profileNotConfigured:'الملف الشخصي: غير مُعد', teacherOf:'أستاذ مادة', teacher:'الأستاذ', teacherNotEntered:'اسم الأستاذ غير مُدخل', classesConfigured:'قسم(أقسام) مُعدّة', profileButton:'👤 ملفي الشخصي', startRollcall:'بدء تسجيل الحضور', todayCourses:'📅 حصصي اليوم', todayCoursesSub:'تسجيل الحضور مباشرة', students:'👨‍🎓 التلاميذ', studentsSub:'التدبير واللوائح حسب القسم', activities:'⭐ الأنشطة والسلوك', activitiesSub:'نقط من 20 وخصومات بنقرة واحدة', stats:'📊 الإحصائيات', statsSub:'الحصيلة والترتيب', history:'📋 السجل', historySub:'البحث والتعديل', timetable:'⚙️ استعمال الزمن', timetableSub:'إعداد الحصص', calendar:'🗓 التقويم', calendarSub:'العطل والأيام الرسمية', backup:'💾 النسخ والتصدير', backupSub:'JSON وExcel وCSV', home:'← الرئيسية', todayTitle:'حصص اليوم', today:'اليوم', studentsBack:'← التلاميذ', studentDetail:'بطاقة التلميذ', activityDetail:'⭐ الأنشطة والسلوك', manageActivities:'تدبير الأنشطة', attendanceHistory:'سجل الحضور', configure:'⚙️ الإعدادات', newPeriod:'↻ فترة جديدة', courseMode:'⚡ وضع الحصة', statsTitle:'📊 الإحصائيات والحصيلة', historyTitle:'📋 سجل الحضور', timetableTitle:'⚙️ إعداد استعمال الزمن', addCourse:'+ إضافة حصة', calendarTitlePrefix:'🗓 التقويم المدرسي', addHoliday:'+ إضافة عطلة / يوم رسمي / استثناء', backupTitle:'💾 النسخ والتصدير', teacherProfile:'👤 ملف الأستاذ', editProfile:'إعداد / تعديل ملفي', fullBackup:'💾 النسخ الاحتياطي الكامل (JSON)', exportJson:'تصدير النسخة الاحتياطية JSON', restoreBackup:'↩ استعادة نسخة احتياطية', restoreData:'استعادة البيانات', mergeBackup:'🔄 دمج نسخة احتياطية', mergeBackupHelp:'إضافة بيانات الهاتف إلى بيانات الحاسوب دون حذف البيانات القديمة. سيتم تنزيل نسخة احتياطية تلقائياً قبل الدمج.', mergeData:'🔄 دمج مع البيانات الحالية', excelExport:'📊 تصدير Excel / CSV', printPdf:'🖨 طباعة / تصدير PDF', demoReset:'⚠️ بيانات تجريبية وإعادة التهيئة', demoStudents:'تحميل تلاميذ تجريبيين', clearAll:'🗑 حذف جميع البيانات', profileTitle:'👤 ملف الأستاذ', cancel:'إلغاء', save:'حفظ', welcome:'👋 مرحباً!', startSetup:'بدء العمل بهذه الإعدادات', addStudent:'إضافة تلميذ', importStudents:'📥 استيراد لائحة التلاميذ', startImport:'بدء الاستيراد', manageClasses:'⚙️ تدبير الأقسام', addClass:'إضافة القسم', close:'إغلاق', addCourseModal:'إضافة حصة', addHolidayModal:'إضافة عطلة / يوم رسمي', activityConfig:'⚙️ إعدادات الأنشطة والسلوك', saveMaxScore:'حفظ النقطة القصوى', addCategory:'+ إضافة فئة', addAction:'+ إضافة إجراء', category:'الفئة', actionPenalty:'الإجراء / الخصم', activityHistory:'السجل', rollcallSaved:'تم تسجيل الحضور', backToToday:'العودة إلى حصص اليوم', searchStudent:'🔎 البحث عن تلميذ...', searchStudentByName:'🔎 البحث عن تلميذ بالاسم...', searchStudentName:'🔎 الاسم أو النسب...', teacherNamePlaceholder:'مثال: أحمد ...'}
+    fr: { subjectLabel:'Matière enseignée :', languageLabel:'Langue de l’application :', welcomeSubjectLabel:'Votre matière :', profilePrefix:'Profil :', profileNotConfigured:'Profil : non configuré', teacherOf:'Enseignant de', teacher:'Enseignant', teacherNotEntered:'Enseignant non renseigné', classesConfigured:'classe(s) configurée(s)', profileButton:'👤 Mon profil', startRollcall:"Lancer l'appel", todayCourses:'📅 Mes cours du jour', todayCoursesSub:"Saisie directe de l'appel", students:'👨‍🎓 Élèves', studentsSub:'Gestion et listes par classe', activities:'⭐ Activités & comportement', activitiesSub:'Notes sur 20 et pénalités en un clic', stats:'📊 Statistiques', statsSub:'Bilans et classements', history:'📋 Historique', historySub:'Recherche et modification', timetable:'⚙️ Emploi du temps', timetableSub:'Configuration des créneaux', calendar:'🗓 Calendrier', calendarSub:'Vacances et jours fériés', backup:'💾 Sauvegarde / Export', backupSub:'JSON, Excel et CSV', home:'← Accueil', todayTitle:'Cours du jour', today:"Aujourd'hui", studentsBack:'← Élèves', studentDetail:'Fiche Individuelle', activityDetail:'⭐ Activités et comportement', manageActivities:'Gérer les activités', attendanceHistory:'Historique de présence', configure:'⚙️ Configurer', newPeriod:'↻ Nouvelle période', courseMode:'⚡ Mode cours', statsTitle:'📊 Statistiques & Bilans', historyTitle:'📋 Historique des Appels', timetableTitle:'⚙️ Configuration Emploi du Temps', addCourse:'+ Ajouter un créneau', calendarTitlePrefix:'🗓 Calendrier Scolaire', addHoliday:'+ Ajouter Vacances / Férié / Exception', backupTitle:'💾 Sauvegarde & Exports', teacherProfile:'👤 Profil enseignant', editProfile:'Configurer / modifier mon profil', fullBackup:'💾 Sauvegarde Complète (JSON)', exportJson:'Exporter la sauvegarde JSON', restoreBackup:'↩ Restaurer une Sauvegarde', restoreData:'Restaurer les données', mergeBackup:'🔄 Fusionner une sauvegarde', mergeBackupHelp:'Ajoute les données du téléphone aux données du PC sans supprimer les anciennes données. Une sauvegarde automatique du PC sera téléchargée avant la fusion.', mergeData:'🔄 Fusionner avec les données actuelles', excelExport:'📊 Export Excel / CSV', printPdf:'🖨 Imprimer / Exporter en PDF', demoReset:'⚠️ Données de Démonstration & Réinitialisation', demoStudents:'Charger des Élèves de Démonstration', clearAll:'🗑 Effacer TOUTES les données', profileTitle:'👤 Mon profil enseignant', cancel:'Annuler', save:'Enregistrer', welcome:'👋 Bienvenue !', startSetup:'Commencer avec cette configuration', addStudent:'Ajouter un Élève', importStudents:"📥 Importer une liste d'élèves", startImport:"Lancer l'importation", manageClasses:'⚙️ Gérer les Classes', addClass:'Ajouter la classe', close:'Fermer', addCourseModal:'Ajouter un Créneau', addHolidayModal:'Ajouter des Vacances / Jour Férié', activityConfig:'⚙️ Configuration — Activités et comportement', saveMaxScore:'Enregistrer la note maximale', addCategory:'+ Ajouter une catégorie', addAction:'+ Ajouter une action', category:'Catégorie', actionPenalty:'Action / pénalité', activityHistory:'Historique', rollcallSaved:'APPEL ENREGISTRÉ', backToToday:'Retour aux cours du jour', searchStudent:'🔎 Rechercher un élève...', searchStudentByName:'🔎 Rechercher un élève par nom...', searchStudentName:'🔎 Nom ou prénom...', teacherNamePlaceholder:'ex. Ahmed EL ...', behaviorsTitle:'📐 Pratiques et comportements en mathématiques', behaviorsHelp:"Cochez uniquement les comportements qui ne sont pas encore maîtrisés chez l'élève. Une case cochée = un point à améliorer. Les cases non cochées n'apparaissent pas comme des problèmes.", behaviorsSaveBtn:'💾 Enregistrer les comportements', remarksTitle:'🗒 Remarques générales', remarksHelp:'Générées automatiquement à partir des pénalités, des devoirs maison, du travail à domicile et des comportements cochés ci-dessus.', printStudentReportBtn:"📄 Rapport de l'élève"},
+    ar: { subjectLabel:'المادة التي تدرسها:', languageLabel:'لغة التطبيق:', welcomeSubjectLabel:'المادة التي تدرسها:', profilePrefix:'الملف الشخصي:', profileNotConfigured:'الملف الشخصي: غير مُعد', teacherOf:'أستاذ مادة', teacher:'الأستاذ', teacherNotEntered:'اسم الأستاذ غير مُدخل', classesConfigured:'قسم(أقسام) مُعدّة', profileButton:'👤 ملفي الشخصي', startRollcall:'بدء تسجيل الحضور', todayCourses:'📅 حصصي اليوم', todayCoursesSub:'تسجيل الحضور مباشرة', students:'👨‍🎓 التلاميذ', studentsSub:'التدبير واللوائح حسب القسم', activities:'⭐ الأنشطة والسلوك', activitiesSub:'نقط من 20 وخصومات بنقرة واحدة', stats:'📊 الإحصائيات', statsSub:'الحصيلة والترتيب', history:'📋 السجل', historySub:'البحث والتعديل', timetable:'⚙️ استعمال الزمن', timetableSub:'إعداد الحصص', calendar:'🗓 التقويم', calendarSub:'العطل والأيام الرسمية', backup:'💾 النسخ والتصدير', backupSub:'JSON وExcel وCSV', home:'← الرئيسية', todayTitle:'حصص اليوم', today:'اليوم', studentsBack:'← التلاميذ', studentDetail:'بطاقة التلميذ', activityDetail:'⭐ الأنشطة والسلوك', manageActivities:'تدبير الأنشطة', attendanceHistory:'سجل الحضور', configure:'⚙️ الإعدادات', newPeriod:'↻ فترة جديدة', courseMode:'⚡ وضع الحصة', statsTitle:'📊 الإحصائيات والحصيلة', historyTitle:'📋 سجل الحضور', timetableTitle:'⚙️ إعداد استعمال الزمن', addCourse:'+ إضافة حصة', calendarTitlePrefix:'🗓 التقويم المدرسي', addHoliday:'+ إضافة عطلة / يوم رسمي / استثناء', backupTitle:'💾 النسخ والتصدير', teacherProfile:'👤 ملف الأستاذ', editProfile:'إعداد / تعديل ملفي', fullBackup:'💾 النسخ الاحتياطي الكامل (JSON)', exportJson:'تصدير النسخة الاحتياطية JSON', restoreBackup:'↩ استعادة نسخة احتياطية', restoreData:'استعادة البيانات', mergeBackup:'🔄 دمج نسخة احتياطية', mergeBackupHelp:'إضافة بيانات الهاتف إلى بيانات الحاسوب دون حذف البيانات القديمة. سيتم تنزيل نسخة احتياطية تلقائياً قبل الدمج.', mergeData:'🔄 دمج مع البيانات الحالية', excelExport:'📊 تصدير Excel / CSV', printPdf:'🖨 طباعة / تصدير PDF', demoReset:'⚠️ بيانات تجريبية وإعادة التهيئة', demoStudents:'تحميل تلاميذ تجريبيين', clearAll:'🗑 حذف جميع البيانات', profileTitle:'👤 ملف الأستاذ', cancel:'إلغاء', save:'حفظ', welcome:'👋 مرحباً!', startSetup:'بدء العمل بهذه الإعدادات', addStudent:'إضافة تلميذ', importStudents:'📥 استيراد لائحة التلاميذ', startImport:'بدء الاستيراد', manageClasses:'⚙️ تدبير الأقسام', addClass:'إضافة القسم', close:'إغلاق', addCourseModal:'إضافة حصة', addHolidayModal:'إضافة عطلة / يوم رسمي', activityConfig:'⚙️ إعدادات الأنشطة والسلوك', saveMaxScore:'حفظ النقطة القصوى', addCategory:'+ إضافة فئة', addAction:'+ إضافة إجراء', category:'الفئة', actionPenalty:'الإجراء / الخصم', activityHistory:'السجل', rollcallSaved:'تم تسجيل الحضور', backToToday:'العودة إلى حصص اليوم', searchStudent:'🔎 البحث عن تلميذ...', searchStudentByName:'🔎 البحث عن تلميذ بالاسم...', searchStudentName:'🔎 الاسم أو النسب...', teacherNamePlaceholder:'مثال: أحمد ...', behaviorsTitle:'📐 الممارسات والسلوكات في الرياضيات', behaviorsHelp:'ضع علامة فقط على السلوكات التي لم يتحكم فيها التلميذ بعد. العلامة تعني نقطة يجب تحسينها. السلوكات غير المعلَّمة لا تظهر كمشكلة.', behaviorsSaveBtn:'💾 حفظ السلوكات', remarksTitle:'🗒 ملاحظات عامة', remarksHelp:'تُولَّد تلقائيًا انطلاقًا من الخصومات والواجبات المنزلية والعمل في المنزل والسلوكات المعلَّمة أعلاه.', printStudentReportBtn:'📄 تقرير التلميذ'}
   };
 
   async showFirstSetup() {
@@ -249,6 +256,8 @@ class AbsenceApp {
     document.getElementById('profile-teacher-name').value = setting?.value || '';
     document.getElementById('profile-subject').value = (await db.get('settings','teacherSubject'))?.value || 'Mathématiques';
     document.getElementById('profile-language').value = this.language;
+    document.getElementById('profile-ui-scale').value = (await db.get('settings','uiScale'))?.value || 'normal';
+    document.getElementById('profile-auto-backup').value = String((await db.get('settings','autoBackupInterval'))?.value || 'off');
     const classes = await db.getAll('classes');
     document.getElementById('profile-class-list').innerHTML =
       classes.length
@@ -370,6 +379,7 @@ class AbsenceApp {
     document.querySelectorAll('.view').forEach(v => v.classList.remove('active'));
     document.getElementById(viewId).classList.add('active');
     this.currentView = viewId;
+    document.querySelectorAll(".bottom-nav [data-view]").forEach(b=>b.classList.toggle("active",b.dataset.view===viewId));
     window.scrollTo(0, 0);
 
     if (viewId === 'view-today') this.renderTodayCourses();
@@ -384,6 +394,10 @@ class AbsenceApp {
 
   bindEvents() {
     document.getElementById('theme-toggle').addEventListener('click', () => this.toggleTheme());
+    document.getElementById('global-search-btn')?.addEventListener('click', () => this.openGlobalSearch());
+    document.getElementById('express-call-btn')?.addEventListener('click', () => this.quickExpressCall());
+    document.getElementById('global-search-input')?.addEventListener('input', e => this.renderGlobalSearch(e.target.value));
+    document.addEventListener('keydown', e => { if((e.ctrlKey||e.metaKey)&&e.key.toLowerCase()==='k'){e.preventDefault();this.openGlobalSearch();} });
     document.getElementById('language-selector').addEventListener('change', (e) => this.changeLanguage(e.target.value));
     document.getElementById('btn-home-logo').addEventListener('click', () => this.navigateTo('view-home'));
     
@@ -420,6 +434,78 @@ class AbsenceApp {
     document.getElementById('btn-undo').addEventListener('click', () => this.undoLastAction());
   }
 
+  async applyUserInterfacePreferences() {
+    const scale = (await db.get('settings','uiScale'))?.value || 'normal';
+    document.body.classList.remove('ui-large','ui-xlarge');
+    if (scale === 'large') document.body.classList.add('ui-large');
+    if (scale === 'xlarge') document.body.classList.add('ui-xlarge');
+  }
+
+  async registerChange() {
+    this.changeCounter++;
+    const interval = Number((await db.get('settings','autoBackupInterval'))?.value || 0);
+    if (interval > 0 && this.changeCounter % interval === 0) {
+      try {
+        const data = await this.getBackupData();
+        localStorage.setItem(`gestion_classe_autobackup_${this.activeSchoolYear}`, JSON.stringify({savedAt:new Date().toISOString(),data}));
+        this.showSaveIndicator();
+      } catch(e) { console.warn('Auto-backup impossible',e); }
+    }
+  }
+
+  async restoreLocalAutoBackup() {
+    const raw=localStorage.getItem(`gestion_classe_autobackup_${this.activeSchoolYear}`);
+    if(!raw){alert('Aucune sauvegarde automatique locale disponible pour cette année.');return;}
+    try {
+      const pack=JSON.parse(raw);
+      if(!confirm(`Restaurer la sauvegarde automatique du ${new Date(pack.savedAt).toLocaleString()} ?\n\nCette restauration remplacera les données actuelles.`))return;
+      const data=pack.data;
+      for(const store of ['classes','students','timetable','attendance','calendar','sessions','activityCategories','activityActions','activityEvents','settings']) if(db.db.objectStoreNames.contains(store)) await db.clearStore(store);
+      for(const x of data.classes||[])await db.put('classes',x); for(const x of data.students||[])await db.put('students',x); for(const x of data.timetable||[])await db.put('timetable',x); for(const x of data.attendance||[])await db.put('attendance',x); for(const x of data.calendar||[])await db.put('calendar',x); for(const x of data.sessions||[])await db.put('sessions',x); for(const x of data.activityCategories||[])await db.put('activityCategories',x); for(const x of data.activityActions||[])await db.put('activityActions',x); for(const x of data.activityEvents||[])await db.put('activityEvents',x); for(const x of data.settings||[])await db.put('settings',x);
+      location.reload();
+    } catch(e){alert('Impossible de restaurer la sauvegarde automatique : '+e.message);}
+  }
+
+  async loadFavorites() {
+    try { const s = await db.get('settings','favoriteClasses'); this.favoriteClasses = Array.isArray(s?.value) ? s.value : []; }
+    catch(e) { this.favoriteClasses = []; }
+  }
+  async saveFavorites() { await db.put('settings',{key:'favoriteClasses',value:this.favoriteClasses}); }
+  isFavoriteClass(id) { return this.favoriteClasses.includes(id); }
+  async toggleFavoriteClass(id) {
+    this.favoriteClasses = this.isFavoriteClass(id) ? this.favoriteClasses.filter(x=>x!==id) : [...this.favoriteClasses,id];
+    await this.saveFavorites(); await this.renderDashboard(); await this.renderClassesManageList();
+  }
+  async renderQuickFavorites() {
+    const box=document.getElementById('quick-favorites-list'); if(!box)return;
+    const classes=await db.getAll('classes'); const fav=classes.filter(c=>this.isFavoriteClass(c.id));
+    box.innerHTML=fav.length ? fav.map(c=>`<button class="favorite-chip" onclick="app.quickFavorite('${this.escapeHtml(c.id)}')">⭐ ${this.escapeHtml(c.name)}</button>`).join('') : '<span class="help-text">Aucun favori. Ajoutez ⭐ à une classe dans « Gérer les Classes ».</span>';
+  }
+  async quickFavorite(classId) {
+    const courses=await this.getCoursesForDate(this.selectedDate); const c=courses.find(x=>x.classId===classId);
+    if(c) return this.startRollcall(c.id,c.classId,this.selectedDate,c.startTime,c.endTime);
+    await this.navigateTo('view-students'); const sel=document.getElementById('select-class-filter'); if(sel){sel.value=classId; await this.renderStudentsList();}
+  }
+  async quickExpressCall() {
+    const courses=await this.getCoursesForDate(this.selectedDate); const sessions=await db.getAll('sessions');
+    const pending=courses.filter(c=>!sessions.some(s=>s.date===this.selectedDate&&s.courseId===c.id&&s.completed));
+    if(pending.length===1){const c=pending[0]; return this.startRollcall(c.id,c.classId,this.selectedDate,c.startTime,c.endTime);}
+    await this.navigateTo('view-today');
+    if(pending.length>1){const list=document.getElementById('today-courses-list'); list?.classList.add('quick-attention'); setTimeout(()=>list?.classList.remove('quick-attention'),1000);}
+  }
+  async openGlobalSearch() {
+    await this.openModal('modal-global-search'); const input=document.getElementById('global-search-input'); if(input){input.value=''; input.focus();}
+    this.renderGlobalSearch('');
+  }
+  async renderGlobalSearch(q) {
+    const box=document.getElementById('global-search-results'); if(!box)return; q=(q||'').trim().toLowerCase();
+    if(q.length<2){box.innerHTML='<p class="help-text">Tapez au moins 2 caractères.</p>';return;}
+    const [classes,students]=await Promise.all([db.getAll('classes'),db.getAll('students')]);
+    const cs=classes.filter(c=>(c.name||'').toLowerCase().includes(q)).slice(0,8);
+    const ss=students.filter(s=>!s.archived&&`${s.nom||''} ${s.prenom||''}`.toLowerCase().includes(q)).slice(0,12);
+    box.innerHTML=[cs.length?'<h4>Classes</h4>'+cs.map(c=>`<div class="global-result"><button onclick="app.closeModal('modal-global-search');app.navigateTo('view-students');setTimeout(()=>{const s=document.getElementById('select-class-filter');if(s){s.value='${this.escapeHtml(c.id)}';app.renderStudentsList();}},50)">📚 ${this.escapeHtml(c.name)}</button><button class="star-result" onclick="event.stopPropagation();app.toggleFavoriteClass('${this.escapeHtml(c.id)}')">${this.isFavoriteClass(c.id)?'★':'☆'}</button></div>`).join(''):'', ss.length?'<h4>Élèves</h4>'+ss.map(s=>`<button class="global-result single" onclick="app.closeModal('modal-global-search');app.showStudentDetail('${this.escapeHtml(s.id)}')">👤 ${this.escapeHtml(s.nom)} ${this.escapeHtml(s.prenom)}</button>`).join(''):''].join('') || '<p class="help-text">Aucun résultat.</p>';
+  }
+
   updateCurrentDateDisplay() {
     const today = this.getTodayISO();
     const dayName = this.language === 'ar' ? this.getDayNameAR(this.getDayOfWeek(today)) : this.getDayNameFR(this.getDayOfWeek(today));
@@ -428,6 +514,7 @@ class AbsenceApp {
 
   // --- DASHBOARD LOGIC ---
   async renderDashboard() {
+    await this.renderQuickFavorites();
     const today = this.getTodayISO();
     const banner = document.getElementById('day-status-banner');
     const dayStatus = await this.getDayStatus(today);
@@ -436,13 +523,44 @@ class AbsenceApp {
     const info = document.getElementById('next-course-info');
     const btn = document.getElementById('btn-start-next-course');
     const courses = await this.getCoursesForDate(today);
-    if (!courses.length) { info.innerText = dayStatus ? dayStatus.message : "Aucun cours programmé aujourd’hui"; btn.classList.add('hidden'); return; }
-    const now = new Date().toTimeString().substring(0,5);
-    const next = courses.find(c => c.endTime >= now);
-    if (!next) { info.innerText = 'Tous les cours du jour sont terminés'; btn.classList.add('hidden'); return; }
-    const label = now >= next.startTime && now <= next.endTime ? 'Cours en cours' : 'Prochain cours';
-    info.innerText = `${label} : ${next.startTime} – ${next.endTime} | ${next.classId}`;
-    btn.classList.remove('hidden'); btn.onclick = () => this.startRollcall(next.id, next.classId, today, next.startTime, next.endTime);
+    if (!courses.length) { info.innerText = dayStatus ? dayStatus.message : "Aucun cours programmé aujourd’hui"; btn.classList.add('hidden'); }
+    else {
+      const now = new Date().toTimeString().substring(0,5);
+      const next = courses.find(c => c.endTime >= now);
+      if (!next) { info.innerText = 'Tous les cours du jour sont terminés'; btn.classList.add('hidden'); }
+      else { const label = now >= next.startTime && now <= next.endTime ? 'Cours en cours' : 'Prochain cours'; info.innerText = `${label} : ${next.startTime} – ${next.endTime} | ${next.classId}`; btn.classList.remove('hidden'); btn.onclick = () => this.startRollcall(next.id, next.classId, today, next.startTime, next.endTime); }
+    }
+    const [students,attendance,events]=await Promise.all([db.getAll('students'),db.getAll('attendance'),db.getAll('activityEvents')]);
+    const activeStudents=students.filter(s=>!s.archived);
+    const todayAtt=attendance.filter(a=>a.date===today);
+    const a=todayAtt.filter(x=>x.status==='A').length, r=todayAtt.filter(x=>x.status==='R').length;
+    const summary=document.getElementById('dashboard-today-summary');
+    if(summary) summary.innerHTML=`<h3>📊 Résumé rapide — ${this.formatDateFR(today)}</h3><div class="insight-grid"><div><b>${activeStudents.length}</b><span>Élèves</span></div><div><b>${a}</b><span>Absences</span></div><div><b>${r}</b><span>Retards</span></div><div><b>${courses.length}</b><span>Cours</span></div></div>`;
+    const alerts=[];
+    // Les seuils sont calculés à partir de la note maximale configurée.
+    // Ainsi, le tableau de bord ne suppose jamais que la note est /20.
+    const maxScore=Number((await db.get('settings','activityMaxScore'))?.value || 20);
+    const behaviorAlertThreshold=maxScore*0.75; // alerte sous 75 % de la note maximale
+    for(const st of activeStudents){
+      const ar=attendance.filter(x=>x.studentId===st.id);
+      const ac=ar.filter(x=>x.status==='A').length;
+      const rc=ar.filter(x=>x.status==='R').length;
+      const deducted=events.filter(e=>e.studentId===st.id&&!e.archivedAt)
+        .reduce((sum,e)=>sum+Number(e.penalty||0),0);
+      const score=Math.max(0,Math.min(maxScore,maxScore-deducted));
+      const reasons=[];
+      if(ac>=3) reasons.push(`🔴 ${ac} absence${ac>1?'s':''}`);
+      if(rc>=3) reasons.push(`🟠 ${rc} retard${rc>1?'s':''}`);
+      if(score<behaviorAlertThreshold) reasons.push(`🟡 comportement ${score.toFixed(1)}/${maxScore}`);
+      if(reasons.length){
+        alerts.push({name:`${this.escapeHtml(st.nom)} ${this.escapeHtml(st.prenom)}`,reasons});
+      }
+    }
+    alerts.sort((a,b)=>a.name.localeCompare(b.name,'fr'));
+    const alertBox=document.getElementById('dashboard-alerts');
+    if(alertBox) alertBox.innerHTML=`<h3>🚨 À surveiller</h3>${alerts.length
+      ? alerts.slice(0,10).map(x=>`<div class="alert-line"><b>${x.name}</b> — ${x.reasons.join(' · ')}</div>`).join('')
+      : '<p class="help-text">Aucun élève ne dépasse actuellement les seuils d’alerte.</p>'}`;
   }
 
   async checkDayStatus(isoDate) { return this.getDayStatus(isoDate); }
@@ -558,6 +676,7 @@ class AbsenceApp {
 
     // Persistance automatique instantanée
     await this.persistAttendanceRecord(studentId, nextStatus);
+    await this.renderDashboard();
     this.showSaveIndicator();
   }
 
@@ -649,6 +768,7 @@ class AbsenceApp {
 
     const pCount = total - (aCount + rCount);
 
+    await this.registerChange();
     await db.put('sessions', { id:`session_${this.activeCourse.date}_${this.activeCourse.courseId}`, date:this.activeCourse.date, courseId:this.activeCourse.courseId, classId:this.activeCourse.classId, startTime:this.activeCourse.startTime, endTime:this.activeCourse.endTime, completed:true, updatedAt:Date.now() });
     this.showSaveIndicator();
     const summaryCard = document.getElementById('summary-details-card');
@@ -788,6 +908,7 @@ class AbsenceApp {
       ? Number(existingStudent.importOrder)
       : (existingInClass.reduce((m,s) => Math.max(m, Number.isFinite(Number(s.importOrder)) ? Number(s.importOrder) : 0), 0) + 1);
     await db.put('students', { id, classId, nom, prenom, archived: false, importOrder });
+    await this.registerChange();
     this.closeModal('modal-student');
     this.renderStudentsList();
     this.showSaveIndicator();
@@ -825,7 +946,7 @@ class AbsenceApp {
       const duplicate=existing.some(s=>s.classId===classId&&!s.archived&&`${s.nom} ${s.prenom}`.trim().toLowerCase()===`${nom} ${prenom}`.trim().toLowerCase()); if(duplicate){skipped++;continue;}
       const student={id:`std_${Date.now()}_${Math.random().toString(36).slice(2,8)}`,classId,nom,prenom,archived:false,importOrder:nextImportOrder++}; await db.put('students',student); existing.push(student); count++;
     }
-    alert(`${count} élève(s) importé(s).${skipped?` ${skipped} doublon(s) ignoré(s).`:''}`); input.value=''; this.closeModal('modal-import'); await this.renderStudentsList(); this.showSaveIndicator();
+    await this.registerChange(); alert(`${count} élève(s) importé(s).${skipped?` ${skipped} doublon(s) ignoré(s).`:''}`); input.value=''; this.closeModal('modal-import'); await this.renderStudentsList(); this.showSaveIndicator();
   }
 
   // --- CLASSES MANAGEMENT ---
@@ -835,7 +956,7 @@ class AbsenceApp {
     container.innerHTML = classes.map(c => `
       <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:8px;">
         <span><strong>${c.name}</strong></span>
-        <button class="btn btn-sm btn-danger" onclick="app.deleteClass('${c.id}')">Supprimer</button>
+        <button class="btn btn-sm btn-secondary" onclick="app.duplicateClass('${c.id}')">📋 Dupliquer</button> <button class="btn btn-sm btn-danger" onclick="app.deleteClass('${c.id}')">Supprimer</button>
       </div>
     `).join('');
   }
@@ -888,7 +1009,8 @@ class AbsenceApp {
       return;
     }
 
-    await db.put('classes', { id: name, name });
+    await db.put('classes', { id: name, name, color: '#2563eb' });
+    await this.registerChange();
     input.value = '';
 
     // Mettre immédiatement à jour tous les sélecteurs de classe, sans recharger la page.
@@ -906,9 +1028,16 @@ class AbsenceApp {
     this.showSaveIndicator();
   }
 
+  async duplicateClass(classId) {
+    const source=await db.get('classes',classId); if(!source)return; const name=prompt(`Nom de la nouvelle classe à partir de ${source.name} :`,`${source.name}-copie`); if(!name)return; const clean=name.trim(); if(!clean)return; if(await db.get('classes',clean)){alert('Cette classe existe déjà.');return;}
+    await db.put('classes',{id:clean,name:clean}); const students=await db.getAll('students'); const sourceStudents=students.filter(s=>s.classId===classId&&!s.archived); const copy=confirm(`Copier aussi les ${sourceStudents.length} élèves dans ${clean} ?`); if(copy){let order=0;for(const st of sourceStudents){order++;await db.put('students',{...st,id:`std_${Date.now()}_${Math.random().toString(36).slice(2,8)}`,classId:clean,importOrder:order});}}
+    await this.refreshClassSelectors(clean); await this.renderClassesManageList(); await this.renderStudentsList(); await this.registerChange(); this.showSaveIndicator(); alert(`Classe ${clean} créée${copy?' avec les élèves copiés':''}.`);
+  }
+
   async deleteClass(classId) {
     if (confirm(`Supprimer la classe ${classId} ?`)) {
       await db.delete('classes', classId);
+      this.favoriteClasses=this.favoriteClasses.filter(id=>id!==classId); await this.saveFavorites();
       await this.refreshClassSelectors();
       await this.renderClassesManageList();
       const activeView = document.querySelector('.view.active')?.id;
@@ -922,6 +1051,7 @@ class AbsenceApp {
   // --- FICHE INDIVIDUELLE ÉLÈVE ---
   async showStudentDetail(studentId) {
     this.activityStudentId = studentId;
+    this.currentStudentDetailId = studentId;
     const student = await db.get('students', studentId);
     const allAttendance = await db.getAll('attendance');
     const studentRecords = allAttendance.filter(a => a.studentId === studentId);
@@ -967,8 +1097,411 @@ class AbsenceApp {
       `;
     }
 
+    await this.renderStudentBehaviors(student);
+    await this.renderStudentGeneralRemark(student);
     this.navigateTo('view-student-detail');
   }
+
+  async saveStudentNotes() {
+    if(!this.currentStudentDetailId)return; const st=await db.get('students',this.currentStudentDetailId); if(!st)return;
+    st.observation=document.getElementById('student-observation')?.value.trim()||''; st.goal=document.getElementById('student-goal')?.value.trim()||''; await db.put('students',st); await this.registerChange(); this.showSaveIndicator(); alert('Suivi pédagogique enregistré.');
+  }
+
+  getPracticesDomains() {
+    return [
+      {id:'postureEcouteEngagement',name:'Posture, écoute et engagement en classe',positive:[
+        'Écoute attentivement les explications et reste concentré pendant la séance.',
+        'Participe régulièrement et de manière pertinente aux échanges.',
+        'Pose des questions lorsqu’une notion ou une consigne n’est pas comprise.',
+        'S’implique activement dans les différentes phases du cours.',
+        'Manifeste de la curiosité et de l’intérêt pour les activités mathématiques.'
+      ], improve:[
+        'Doit maintenir son attention pendant toute la durée de la séance.',
+        'Éviter les distractions pendant les phases d’explication.',
+        'Gagnerait à participer davantage à l’oral.',
+        'Doit apprendre à signaler rapidement une difficulté plutôt que de rester passif.',
+        'Doit adopter une posture plus active face aux apprentissages.'
+      ]},
+      {id:'initiativeBrouillon',name:'Initiative et travail au brouillon',positive:[
+        'Se met rapidement au travail sans attendre la correction.',
+        'Cherche activement une stratégie pour résoudre un problème.',
+        'Utilise efficacement le brouillon pour faire des essais et organiser sa réflexion.',
+        'N’hésite pas à tester plusieurs méthodes.',
+        'Persévère même lorsqu’une première tentative échoue.'
+      ], improve:[
+        'Doit oser commencer une recherche seul avant de demander de l’aide.',
+        'Utiliser davantage le brouillon pour essayer, schématiser et raisonner.',
+        'Ne pas abandonner trop rapidement face à une difficulté.',
+        'Doit conserver ses essais et ses erreurs afin de comprendre ce qui n’a pas fonctionné.',
+        'Gagnerait à développer progressivement son autonomie dans la recherche.'
+      ]},
+      {id:'rigueurEcrit',name:'Rigueur de l’écrit et présentation mathématique',positive:[
+        'Présente un travail propre, lisible et organisé.',
+        'Pose correctement les calculs et respecte les étapes du raisonnement.',
+        'Utilise correctement les symboles et les signes mathématiques.',
+        'Rédige les réponses de manière claire et structurée.',
+        'Réalise des figures géométriques précises et soignées.'
+      ], improve:[
+        'Doit améliorer la présentation et l’organisation de ses calculs.',
+        'Penser à écrire toutes les étapes importantes du raisonnement.',
+        'Veiller à aligner correctement les calculs et les signes d’égalité.',
+        'Les réponses doivent être formulées par des phrases lorsque cela est nécessaire.',
+        'Les constructions géométriques doivent être réalisées avec davantage de précision.'
+      ]},
+      {id:'langageMathematique',name:'Langage et communication mathématique',positive:[
+        'Utilise un vocabulaire mathématique adapté.',
+        'Explique clairement sa démarche à l’oral.',
+        'Sait présenter une méthode de résolution au tableau.',
+        'Justifie ses réponses en utilisant les propriétés mathématiques appropriées.',
+        'Reformule correctement une consigne ou un résultat.'
+      ], improve:[
+        'Doit enrichir son vocabulaire mathématique.',
+        'Éviter les formulations approximatives et utiliser les termes mathématiques appropriés.',
+        'Doit apprendre à expliquer pourquoi une réponse est correcte.',
+        'Les justifications doivent être davantage développées.',
+        'Gagnerait à verbaliser les différentes étapes de son raisonnement.'
+      ]},
+      {id:'gestionErreurs',name:'Gestion des erreurs et autocorrection',positive:[
+        'Accepte l’erreur comme une étape normale de l’apprentissage.',
+        'Identifie l’origine de ses erreurs.',
+        'Corrige son travail avec attention.',
+        'Tient compte des remarques données lors de la correction.',
+        'Cherche à ne pas reproduire les mêmes erreurs.'
+      ], improve:[
+        'Doit prendre le temps d’analyser ses erreurs plutôt que de simplement recopier la correction.',
+        'Apprendre à identifier précisément l’étape où l’erreur a été commise.',
+        'Doit relire son travail avant de le considérer comme terminé.',
+        'Porter une attention particulière aux erreurs de signe et de calcul.',
+        'Utiliser les corrections précédentes pour éviter de reproduire les mêmes erreurs.'
+      ]},
+      {id:'raisonnementProblemes',name:'Raisonnement et résolution de problèmes',positive:[
+        'Analyse correctement les données avant de commencer.',
+        'Identifie les informations utiles et la question posée.',
+        'Choisit une stratégie adaptée à la situation.',
+        'Sait expliquer les étapes suivies pour parvenir au résultat.',
+        'Fait preuve de persévérance face aux situations-problèmes.'
+      ], improve:[
+        'Doit prendre le temps d’analyser la situation avant de commencer les calculs.',
+        'Gagnerait à rechercher une stratégie plutôt qu’à appliquer directement une formule.',
+        'Doit apprendre à distinguer les données utiles des données inutiles.',
+        'Penser à vérifier si la méthode choisie répond réellement à la question.',
+        'Doit développer sa capacité à résoudre une situation sans modèle immédiatement fourni.'
+      ]},
+      {id:'memorisation',name:'Mémorisation et mobilisation des connaissances',positive:[
+        'Réutilise correctement les notions étudiées dans de nouvelles situations.',
+        'Mobilise les propriétés et méthodes apprises de manière pertinente.',
+        'Connaît les formules et propriétés essentielles.',
+        'Fait le lien entre les différentes notions étudiées.',
+        'Réinvestit les corrections et les méthodes précédemment rencontrées.'
+      ], improve:[
+        'Doit consolider les notions essentielles vues en classe.',
+        'Apprendre les définitions, propriétés et formules importantes.',
+        'Gagnerait à revoir régulièrement les notions plutôt qu’avant les évaluations uniquement.',
+        'Doit apprendre à reconnaître quand utiliser une propriété ou une méthode.',
+        'Renforcer le réinvestissement des connaissances dans des exercices différents.'
+      ]},
+      {id:'autonomieOrganisationMateriel',name:'Autonomie, organisation et gestion du matériel',positive:[
+        'Arrive avec le matériel nécessaire et l’utilise correctement.',
+        'Organise efficacement son cahier et ses documents.',
+        'Travaille de manière autonome après lecture de la consigne.',
+        'Gère correctement son temps pendant les activités.',
+        'Prend en charge son propre travail et demande de l’aide de manière pertinente.'
+      ], improve:[
+        'Doit apporter systématiquement le matériel nécessaire.',
+        'Améliorer l’organisation du cahier et des documents.',
+        'Doit apprendre à lire attentivement une consigne avant de solliciter de l’aide.',
+        'Gagnerait à mieux gérer son temps pendant les exercices.',
+        'Développer progressivement son autonomie face aux tâches mathématiques.'
+      ]}
+    ];
+  }
+
+  normalizePractices(p) {
+    const domains=this.getPracticesDomains(); const src=p||{}; const out={};
+    for(const d of domains){ const x=src[d.id]||{}; out[d.id]={niveau:x.niveau||'non_evalue',positives:Array.isArray(x.positives)?x.positives:[],ameliorations:Array.isArray(x.ameliorations)?x.ameliorations:[],remarque:x.remarque||''}; }
+    out.remarqueGenerale=src.remarqueGenerale||''; return out;
+  }
+
+  async renderStudentPractices(student){
+    const container=document.getElementById('student-practices-container'); if(!container)return;
+    const p=this.normalizePractices(student.pratiquesAttitudes); const ar=this.language==='ar';
+    const levels=ar?[['non_evalue','غير مُقيّم'],['tres_satisfaisant','مرضٍ جدًا'],['satisfaisant','مرضي'],['a_ameliorer','يحتاج إلى تحسين'],['insuffisant','غير كاف']]:[['non_evalue','Non évalué'],['tres_satisfaisant','Très satisfaisant'],['satisfaisant','Satisfaisant'],['a_ameliorer','À améliorer'],['insuffisant','Insuffisant']];
+    const esc=v=>this.escapeHtml(v);
+    container.innerHTML=this.getPracticesDomains().map(d=>{const x=p[d.id];return `<div class="practice-domain-card"><h4>${esc(d.name)}</h4><div class="practice-level"><label>${ar?'المستوى':'Niveau'} :</label><select class="form-control practice-level-select" data-domain="${d.id}">${levels.map(([v,l])=>`<option value="${v}" ${x.niveau===v?'selected':''}>${l}</option>`).join('')}</select></div><div class="practice-cols"><div><b>${ar?'مواقف إيجابية':'Attitudes positives'}</b>${d.positive.map((t,i)=>`<label class="practice-check"><input type="checkbox" data-domain="${d.id}" data-kind="positives" data-index="${i}" ${x.positives.includes(i)?'checked':''}> <span>${esc(t)}</span></label>`).join('')}</div><div><b>${ar?'محاور التحسين':'Axes d’amélioration'}</b>${d.improve.map((t,i)=>`<label class="practice-check"><input type="checkbox" data-domain="${d.id}" data-kind="ameliorations" data-index="${i}" ${x.ameliorations.includes(i)?'checked':''}> <span>${esc(t)}</span></label>`).join('')}</div></div><div class="form-group"><label>${ar?'ملاحظة شخصية':'Remarque personnelle'} :</label><textarea class="form-control practice-note" data-domain="${d.id}" rows="2" placeholder="${ar?'ملاحظة اختيارية...':'Remarque facultative...'}">${esc(x.remarque)}</textarea></div></div>`}).join('');
+    const g=document.getElementById('student-practices-general'); if(g)g.value=p.remarqueGenerale;
+  }
+
+  async saveStudentPractices(){
+    if(!this.currentStudentDetailId)return; const st=await db.get('students',this.currentStudentDetailId); if(!st)return;
+    const p=this.normalizePractices(st.pratiquesAttitudes); document.querySelectorAll('.practice-level-select').forEach(el=>{if(p[el.dataset.domain])p[el.dataset.domain].niveau=el.value;});
+    document.querySelectorAll('.practice-check').forEach(label=>{const el=label.querySelector('input');const x=p[el.dataset.domain];if(!x)return;const arr=x[el.dataset.kind];const i=Number(el.dataset.index);if(el.checked&&!arr.includes(i))arr.push(i);if(!el.checked)x[el.dataset.kind]=arr.filter(v=>Number(v)!==i);});
+    document.querySelectorAll('.practice-note').forEach(el=>{if(p[el.dataset.domain])p[el.dataset.domain].remarque=el.value.trim();});
+    p.remarqueGenerale=document.getElementById('student-practices-general')?.value.trim()||''; st.pratiquesAttitudes=p; await db.put('students',st); await this.registerChange(); this.showSaveIndicator(); alert(this.language==='ar'?'تم حفظ الممارسات والمواقف.':'Pratiques et attitudes enregistrées.');
+  }
+
+  // ==========================================================================
+  // v4.5 — « Pratiques et comportements en mathématiques » (5 domaines, cases à
+  // cocher uniquement — pas de niveau) + génération automatique des
+  // « Remarques générales ». N'utilise QUE des données déjà présentes dans
+  // l'application (activityEvents / activityActions existants). Le système
+  // précédent (getPracticesDomains / normalizePractices / student.pratiquesAttitudes)
+  // n'est ni supprimé ni modifié : il reste stocké tel quel pour compatibilité,
+  // simplement plus affiché dans cette nouvelle fiche.
+  // ==========================================================================
+
+  getBehaviorDomains() {
+    return [
+      { id:'rituelsOrganisation', name:'Rituels & organisation', nameAr:'الطقوس والتنظيم', items:[
+        { fr:'Entrée/sortie agitées.', ar:'الدخول/الخروج بشكل غير منظم.' },
+        { fr:'Affaires ou matériel souvent non préparés.', ar:'الأدوات أو اللوازم غالبًا غير مُعدة.' },
+        { fr:'Oublie régulièrement le matériel de mathématiques.', ar:'ينسى بانتظام لوازم الرياضيات.' },
+        { fr:"A besoin d'aide pour organiser son espace de travail.", ar:'يحتاج إلى مساعدة لتنظيم فضاء عمله.' }
+      ]},
+      { id:'ecouteConcentration', name:'Écoute & concentration', nameAr:'الإنصات والتركيز', items:[
+        { fr:'Se distrait ou bavarde pendant les explications.', ar:'يتشتت انتباهه أو يتحدث أثناء الشرح.' },
+        { fr:'A du mal à maintenir son attention.', ar:'يجد صعوبة في الحفاظ على انتباهه.' },
+        { fr:"Intervient ou lève la main pendant les explications sans attendre le signal.", ar:'يتدخل أو يرفع يده أثناء الشرح دون انتظار الإشارة.' },
+        { fr:'Ne regarde pas attentivement le tableau ou le support présenté.', ar:'لا يتابع السبورة أو الدعامة المعروضة بانتباه.' }
+      ]},
+      { id:'travailEngagement', name:'Travail & engagement', nameAr:'العمل والانخراط', items:[
+        { fr:'Démarre difficilement le travail.', ar:'يجد صعوبة في الشروع في العمل.' },
+        { fr:'Participe peu aux activités.', ar:'يشارك بشكل ضعيف في الأنشطة.' },
+        { fr:"A besoin d'être régulièrement incité à travailler.", ar:'يحتاج إلى تحفيز متكرر للعمل.' },
+        { fr:'Abandonne rapidement face à une difficulté.', ar:'يستسلم بسرعة أمام الصعوبة.' },
+        { fr:'Bavarde pendant le travail en binôme ou autonome.', ar:'يتحدث أثناء العمل الثنائي أو الفردي.' },
+        { fr:'Gère difficilement le temps de travail.', ar:'يجد صعوبة في تدبير وقت العمل.' }
+      ]},
+      { id:'rigueurRaisonnement', name:'Rigueur & raisonnement', nameAr:'الدقة والاستدلال', items:[
+        { fr:'Manque de précision dans ses écrits mathématiques.', ar:'ينقصه الدقة في كتاباته الرياضياتية.' },
+        { fr:'Utilise un vocabulaire mathématique imprécis.', ar:'يستعمل مفردات رياضياتية غير دقيقة.' },
+        { fr:'A des difficultés à expliquer son raisonnement.', ar:'يجد صعوبة في شرح استدلاله.' },
+        { fr:'Évite ou refuse de présenter son travail au tableau.', ar:'يتجنب أو يرفض تقديم عمله على السبورة.' },
+        { fr:'Corrige difficilement ses erreurs.', ar:'يجد صعوبة في تصحيح أخطائه.' },
+        { fr:'Ne vérifie pas suffisamment la cohérence de ses résultats.', ar:'لا يتحقق بشكل كافٍ من انسجام نتائجه.' }
+      ]},
+      { id:'respectCollaboration', name:'Respect & collaboration', nameAr:'الاحترام والتعاون', items:[
+        { fr:'Interrompt les autres ou ne respecte pas le tour de parole.', ar:'يقاطع الآخرين أو لا يحترم التناوب في الكلام.' },
+        { fr:'Se moque des erreurs de ses camarades.', ar:'يسخر من أخطاء زملائه.' },
+        { fr:'Dérange les autres pendant leur travail.', ar:'يزعج الآخرين أثناء عملهم.' },
+        { fr:'Participe difficilement au travail de groupe ou en binôme.', ar:'يجد صعوبة في المشاركة في العمل الجماعي أو الثنائي.' },
+        { fr:"Ne respecte pas suffisamment le matériel ou l'environnement de travail.", ar:'لا يحترم بشكل كافٍ الأدوات أو محيط العمل.' }
+      ]}
+    ];
+  }
+
+  // Normalise student.pratiquesComportements : { domainId: [indices cochés] }.
+  // Toujours renvoyer un tableau (même vide) pour chaque domaine connu, sans
+  // jamais perdre d'éventuelles données déjà enregistrées pour un domaine.
+  normalizeBehaviorChecks(raw) {
+    const domains = this.getBehaviorDomains(); const src = raw || {}; const out = {};
+    for (const d of domains) { const arr = src[d.id]; out[d.id] = Array.isArray(arr) ? arr.map(Number).filter(n=>Number.isInteger(n)) : []; }
+    return out;
+  }
+
+  async renderStudentBehaviors(student) {
+    const container = document.getElementById('student-behaviors-container'); if (!container) return;
+    const checks = this.normalizeBehaviorChecks(student.pratiquesComportements);
+    const ar = this.language === 'ar'; const esc = v => this.escapeHtml(v);
+    container.innerHTML = this.getBehaviorDomains().map(d => {
+      const sel = checks[d.id] || [];
+      const rows = d.items.map((it, i) => `<label class="behavior-check-item"><input type="checkbox" data-domain="${d.id}" data-index="${i}" ${sel.includes(i)?'checked':''}> <span>${esc(ar?it.ar:it.fr)}</span></label>`).join('');
+      return `<div class="behavior-domain-card"><h4>${esc(ar?d.nameAr:d.name)}</h4><div class="behavior-check-list">${rows}</div></div>`;
+    }).join('');
+  }
+
+  async saveStudentBehaviors() {
+    if (!this.currentStudentDetailId) return; const st = await db.get('students', this.currentStudentDetailId); if (!st) return;
+    const checks = this.normalizeBehaviorChecks(st.pratiquesComportements);
+    document.querySelectorAll('#student-behaviors-container input[type="checkbox"]').forEach(el => {
+      const arr = checks[el.dataset.domain]; if (!arr) return; const i = Number(el.dataset.index);
+      if (el.checked && !arr.includes(i)) arr.push(i);
+      if (!el.checked) checks[el.dataset.domain] = arr.filter(v => v !== i);
+    });
+    st.pratiquesComportements = checks; await db.put('students', st); await this.registerChange(); this.showSaveIndicator();
+    await this.renderStudentGeneralRemark(st);
+    alert(this.language === 'ar' ? 'تم حفظ السلوكات.' : 'Comportements enregistrés.');
+  }
+
+  // Correspondance entre les remarques automatiques et les actions de
+  // pénalités DÉJÀ existantes dans l'application (activityActions). Aucune
+  // nouvelle pénalité n'est créée : on se contente de regrouper des actions
+  // existantes par thème pour générer un texte de synthèse.
+  getRemarkActionMap() {
+    return {
+      devoirMaison: ['acta_homework'],
+      travailDomicile: ['acta_late', 'acta_incomplete', 'acta_consigne'],
+      oubliLivre: ['acta_book'],
+      oubliCahier: ['acta_notebook'],
+      oubliMateriel: ['acta_material'],
+      manqueParticipation: ['acta_participation', 'acta_refuse'],
+      manqueConcentration: ['acta_listen'],
+      collaboration: ['acta_group_refuse', 'acta_group_no', 'acta_respect']
+    };
+  }
+
+  getRemarkThresholds() {
+    return {
+      devoirMaison: 2,
+      travailDomicile: 5,
+      oubliLivre: { low: 2, high: 4 },
+      oubliCahier: 3,
+      oubliMateriel: 3,
+      manqueParticipation: 3,
+      manqueConcentration: 3,
+      collaboration: 3
+    };
+  }
+
+  joinList(list, ar) {
+    if (list.length === 1) return list[0];
+    const sep = ar ? ' و' : ' et ';
+    if (list.length === 2) return list.join(sep);
+    return (ar ? list.slice(0, -1).join('، ') : list.slice(0, -1).join(', ')) + sep + list[list.length - 1];
+  }
+
+  // Comptabilise, à partir des activityEvents NON archivés de l'élève, le
+  // nombre d'occurrences pour chaque thème de remarque (seuils précis, jamais
+  // de fusion entre « devoir maison » et « travail à domicile »).
+  countRemarkOccurrences(events) {
+    const map = this.getRemarkActionMap(); const counts = {};
+    for (const key in map) counts[key] = events.filter(e => map[key].includes(e.actionId)).length;
+    return counts;
+  }
+
+  // Génère le texte de la rubrique « Remarques générales » à partir : des
+  // pénalités déjà enregistrées, des devoirs maison, du travail à domicile et
+  // des comportements cochés dans les 5 domaines. Ne jamais inventer de
+  // difficulté qui ne serait pas atteinte par son seuil.
+  buildGeneralRemark(student, events) {
+    const ar = this.language === 'ar';
+    const counts = this.countRemarkOccurrences(events);
+    const th = this.getRemarkThresholds();
+    const phrases = [];
+
+    // 1. Devoir maison / travail à domicile (jamais fusionnés dans le calcul,
+    // mais regroupés dans une phrase commune si les deux seuils sont atteints).
+    const dmFlag = counts.devoirMaison >= th.devoirMaison;
+    const tdFlag = counts.travailDomicile >= th.travailDomicile;
+    if (dmFlag && tdFlag) {
+      phrases.push(ar
+        ? 'لا يُنجز الواجبات المنزلية ولا العمل في المنزل بانتظام. من الضروري مزيد من الانتظام في العمل الشخصي لترسيخ التعلمات.'
+        : 'Les devoirs à la maison et le travail à domicile ne sont pas réalisés régulièrement. Une plus grande régularité dans le travail personnel est nécessaire pour consolider les apprentissages.');
+    } else if (dmFlag) {
+      phrases.push(ar
+        ? 'لا يُنجز الواجبات المنزلية بانتظام. من الضروري العمل الشخصي المنتظم لترسيخ التعلمات.'
+        : 'Les devoirs à la maison ne sont pas réalisés régulièrement. Un travail personnel plus régulier est nécessaire pour consolider les apprentissages.');
+    } else if (tdFlag) {
+      phrases.push(ar
+        ? 'لا يُنجز العمل في المنزل بانتظام. من الضروري مزيد من الانتظام في العمل الشخصي لترسيخ التعلمات.'
+        : "Le travail à domicile n'est pas réalisé régulièrement. Une plus grande régularité dans le travail personnel est nécessaire pour consolider les apprentissages.");
+    }
+
+    // 2. Matériel (livre / cahier / matériel), avec un seuil à deux paliers pour le livre.
+    const matItems = [];
+    if (counts.oubliLivre >= th.oubliLivre.high) matItems.push({ fr: 'son livre scolaire', ar: 'كتابه المدرسي', high: true });
+    else if (counts.oubliLivre >= th.oubliLivre.low) matItems.push({ fr: 'son livre scolaire', ar: 'كتابه المدرسي', high: false });
+    if (counts.oubliCahier >= th.oubliCahier) matItems.push({ fr: 'son cahier', ar: 'كراسته', high: false });
+    if (counts.oubliMateriel >= th.oubliMateriel) matItems.push({ fr: 'son matériel', ar: 'لوازمه', high: false });
+    if (matItems.length === 1) {
+      const it = matItems[0];
+      if (it.high) phrases.push(ar ? `ينسى ${it.ar} بانتظام. ينبغي تحسين تحضير اللوازم قبل الحصص.` : `L'élève oublie régulièrement ${it.fr}. Une meilleure préparation du matériel avant les cours est nécessaire.`);
+      else phrases.push(ar ? `ينسى ${it.ar} غالبًا وعليه الحرص على تحضير لوازمه قبل كل حصة.` : `L'élève oublie souvent ${it.fr} et doit veiller à préparer son matériel avant chaque séance.`);
+    } else if (matItems.length > 1) {
+      const list = this.joinList(matItems.map(i => ar ? i.ar : i.fr), ar);
+      phrases.push(ar ? `على التلميذ الحرص على تحضير ${list} قبل كل حصة.` : `L'élève doit veiller à préparer ${list} avant chaque séance.`);
+    }
+
+    // 3. Comportement en classe repéré via les pénalités déjà existantes.
+    const classroom = [];
+    if (counts.manqueParticipation >= th.manqueParticipation) classroom.push(ar ? 'يشارك بشكل غير كافٍ في الأنشطة' : 'participe insuffisamment aux activités');
+    if (counts.manqueConcentration >= th.manqueConcentration) classroom.push(ar ? 'يعاني من نقص التركيز أثناء الشرح' : "manque de concentration pendant les explications");
+    if (counts.collaboration >= th.collaboration) classroom.push(ar ? 'يحتاج إلى تحسين سلوكه تجاه زملائه والعمل الجماعي' : 'doit améliorer son comportement envers ses camarades et le travail collectif');
+    if (classroom.length) phrases.push(ar ? `داخل القسم، ${this.joinList(classroom, ar)}.` : `En classe, l'élève ${this.joinList(classroom, ar)}.`);
+
+    // 4. Comportements cochés dans les 5 domaines (Rituels & organisation, etc.).
+    const domainTemplates = {
+      rituelsOrganisation: { fr: 'veiller à préparer son matériel et organiser son espace de travail', ar: 'الحرص على تحضير لوازمه وتنظيم فضاء عمله' },
+      ecouteConcentration: { fr: 'améliorer son écoute et sa concentration pendant les explications', ar: 'تحسين إنصاته وتركيزه أثناء الشرح' },
+      travailEngagement: { fr: 's’engager davantage dans les activités et faire preuve de persévérance', ar: 'الانخراط أكثر في الأنشطة والتحلي بالمثابرة' },
+      rigueurRaisonnement: { fr: 'gagner en rigueur dans la rédaction et l’explication de son raisonnement', ar: 'اكتساب مزيد من الدقة في التحرير وشرح استدلاله' },
+      respectCollaboration: { fr: 'améliorer le respect des autres et la collaboration en classe', ar: 'تحسين احترام الآخرين والتعاون داخل القسم' }
+    };
+    const checks = this.normalizeBehaviorChecks(student.pratiquesComportements);
+    const domainClauses = [];
+    for (const d of this.getBehaviorDomains()) { if ((checks[d.id]||[]).length > 0 && domainTemplates[d.id]) domainClauses.push(ar ? domainTemplates[d.id].ar : domainTemplates[d.id].fr); }
+    if (domainClauses.length) phrases.push(ar ? `على مستوى السلوك، على التلميذ ${this.joinList(domainClauses, ar)}.` : `Sur le plan du comportement, l'élève doit ${this.joinList(domainClauses, ar)}.`);
+
+    if (!phrases.length) return ar ? 'لا توجد ملاحظة خاصة تستدعي الإشارة.' : 'Aucune remarque particulière à signaler.';
+    return phrases.join(' ');
+  }
+
+  async renderStudentGeneralRemark(student) {
+    const box = document.getElementById('student-general-remark'); if (!box) return;
+    const events = (await db.getAll('activityEvents')).filter(e => e.studentId === student.id && !e.archivedAt);
+    box.textContent = this.buildGeneralRemark(student, events);
+  }
+
+  async printStudentReport() {
+    const st = await db.get('students', this.currentStudentDetailId);
+    if (!st) return;
+    const [attAll, evAll, timetable, categories, actions] = await Promise.all([
+      db.getAll('attendance'), db.getAll('activityEvents'), db.getAll('timetable'),
+      db.getAll('activityCategories'), db.getAll('activityActions')
+    ]);
+    const att = attAll.filter(a => a.studentId === st.id).sort((a,b) => b.date.localeCompare(a.date) || String(b.timestamp||0).localeCompare(String(a.timestamp||0)));
+    const ev = evAll.filter(e => e.studentId === st.id && !e.archivedAt).sort((a,b) => String(b.createdAt||b.date).localeCompare(String(a.createdAt||a.date)));
+    const maxScore = Number((await db.get('settings','activityMaxScore'))?.value || 20);
+    const deducted = ev.reduce((sum,e) => sum + Number(e.penalty || 0), 0);
+    const score = Math.max(0, Math.min(maxScore, maxScore - deducted));
+    const esc = v => this.escapeHtml(v);
+    const attendanceRows = att.length ? att.map(r => {
+      const c = timetable.find(x => x.id === r.courseId);
+      const horaire = c ? `${c.startTime} – ${c.endTime}` : 'Horaire non renseigné';
+      return `<tr><td>${esc(this.formatDateFR(r.date))}</td><td>${esc(horaire)}</td><td><b>${r.status==='A'?'Absence (A)':'Retard (R)'}</b></td></tr>`;
+    }).join('') : '<tr><td colspan="3">Aucune absence ou retard enregistré.</td></tr>';
+    const eventRows = ev.length ? ev.map(e => {
+      const c = categories.find(x => x.id === e.categoryId);
+      const a = actions.find(x => x.id === e.actionId);
+      return `<tr><td>${esc(this.formatDateFR(e.date))}</td><td>${esc(c?.name || 'Catégorie supprimée')}</td><td>${esc(a?.name || 'Action supprimée')}</td><td>−${Number(e.penalty||0).toFixed(2)}</td></tr>`;
+    }).join('') : '<tr><td colspan="4">Aucune pénalité enregistrée.</td></tr>';
+    this.openPrintReport(`Rapport — ${st.nom} ${st.prenom}`, `
+      <h1>${esc(st.nom)} ${esc(st.prenom)}</h1>
+      <p><b>Classe :</b> ${esc(st.classId)} — <b>Année :</b> ${esc(this.activeSchoolYear)}</p>
+      <h2>Présence détaillée</h2>
+      <p><b>Absences :</b> ${att.filter(a=>a.status==='A').length} &nbsp; | &nbsp; <b>Retards :</b> ${att.filter(a=>a.status==='R').length}</p>
+      <table border="1" cellspacing="0" cellpadding="7" width="100%"><thead><tr><th>Date</th><th>Horaire</th><th>Statut</th></tr></thead><tbody>${attendanceRows}</tbody></table>
+      <h2>Comportement détaillé</h2>
+      <p>Note actuelle : <b>${score.toFixed(2)} / ${maxScore}</b> — Pénalités cumulées : <b>−${deducted.toFixed(2)} point(s)</b></p>
+      <table border="1" cellspacing="0" cellpadding="7" width="100%"><thead><tr><th>Date</th><th>Catégorie</th><th>Pénalité</th><th>Points</th></tr></thead><tbody>${eventRows}</tbody></table>
+      ${this.buildBehaviorsReportHtml(st, esc)}
+      <h2>Remarques générales</h2>
+      <p>${esc(this.buildGeneralRemark(st, ev))}</p>
+    `);
+  }
+
+  // Rapport imprimé — domaines de comportements cochés (aucun niveau, aucune
+  // note : uniquement les points à améliorer réellement cochés pour l'élève).
+  buildBehaviorsReportHtml(student, esc) {
+    const ar = this.language === 'ar';
+    const checks = this.normalizeBehaviorChecks(student.pratiquesComportements);
+    const domains = this.getBehaviorDomains().map(d => {
+      const sel = checks[d.id] || []; if (!sel.length) return null;
+      const items = sel.map(i => d.items[i]).filter(Boolean).map(it => `<li>${esc(ar ? it.ar : it.fr)}</li>`).join('');
+      return `<div style="margin-bottom:12px;padding:8px 10px;border:1px solid #ddd;border-radius:8px"><h3 style="margin:0 0 6px">${esc(ar ? d.nameAr : d.name)}</h3><ul>${items}</ul></div>`;
+    }).filter(Boolean);
+    const body = domains.length ? domains.join('') : `<p>${ar ? 'لم يتم تسجيل أي صعوبة سلوكية.' : "Aucune difficulté de comportement n'a été signalée."}</p>`;
+    return `<h2>${ar ? 'الممارسات والسلوكات في الرياضيات' : 'Pratiques et comportements en mathématiques'}</h2>${body}`;
+  }
+
+  buildPracticesReportHtml(data, esc){
+    const p=this.normalizePractices(data); const levels={non_evalue:'Non évalué',tres_satisfaisant:'Très satisfaisant',satisfaisant:'Satisfaisant',a_ameliorer:'À améliorer',insuffisant:'Insuffisant'};
+    const ds=this.getPracticesDomains();
+    return `<h2>Pratiques et attitudes en mathématiques</h2>${ds.map(d=>{const x=p[d.id];const pos=x.positives.map(i=>d.positive[Number(i)]).filter(Boolean);const imp=x.ameliorations.map(i=>d.improve[Number(i)]).filter(Boolean);return `<div style="margin-bottom:16px;padding:10px;border:1px solid #ddd;border-radius:8px"><h3>${esc(d.name)}</h3><p><b>Niveau :</b> ${esc(levels[x.niveau]||levels.non_evalue)}</p>${pos.length?`<p><b>Points positifs :</b></p><ul>${pos.map(t=>`<li>${esc(t)}</li>`).join('')}</ul>`:''}${imp.length?`<p><b>Axes d’amélioration :</b></p><ul>${imp.map(t=>`<li>${esc(t)}</li>`).join('')}</ul>`:''}${x.remarque?`<p><b>Remarque personnelle :</b> ${esc(x.remarque)}</p>`:''}</div>`}).join('')}${p.remarqueGenerale?`<h3>Remarque générale sur les pratiques de travail</h3><p>${esc(p.remarqueGenerale)}</p>`:''}`;
+  }
+
+  openPrintReport(title,html){ const w=window.open('','_blank','width=900,height=700'); if(!w){alert('Autorisez les fenêtres pop-up pour imprimer le rapport.');return;} w.document.write(`<html><head><title>${this.escapeHtml(title)}</title><meta charset="utf-8"><style>body{font-family:Arial,sans-serif;padding:35px;line-height:1.5}h1{margin-bottom:4px}h2{border-bottom:1px solid #ddd;padding-bottom:5px}@media print{body{padding:10px}}</style></head><body>${html}<script>window.onload=()=>window.print()<\/script></body></html>`); w.document.close(); }
+
+  async printClassReport(){ const classes=await db.getAll('classes'), students=await db.getAll('students'), att=await db.getAll('attendance'); const rows=classes.map(c=>{const ss=students.filter(s=>s.classId===c.id&&!s.archived);const aa=att.filter(a=>a.classId===c.id);return `<tr><td>${this.escapeHtml(c.name)}</td><td>${ss.length}</td><td>${aa.filter(a=>a.status==='A').length}</td><td>${aa.filter(a=>a.status==='R').length}</td></tr>`}).join(''); this.openPrintReport(`Rapport de classe — ${this.activeSchoolYear}`,`<h1>Rapport global des classes</h1><p>Année scolaire : <b>${this.activeSchoolYear}</b></p><table border="1" cellspacing="0" cellpadding="8" width="100%"><tr><th>Classe</th><th>Élèves</th><th>Absences</th><th>Retards</th></tr>${rows}</table>`); }
 
   // --- STATISTIQUES VIEW ---
   async renderStats() {
@@ -1045,6 +1578,15 @@ class AbsenceApp {
           </div>
         </div>
       `).join('');
+    }
+    const alertList=document.getElementById('stats-alert-list');
+    if(alertList){
+      const students=await db.getAll('students'), events=await db.getAll('activityEvents'); const alerts=[];
+      for(const st of students.filter(s=>!s.archived && (selectedClass==='ALL'||s.classId===selectedClass))){
+        const rec=allAttendance.filter(a=>a.studentId===st.id); const ac=rec.filter(a=>a.status==='A').length, rc=rec.filter(a=>a.status==='R').length; const score=Math.max(0,20-events.filter(e=>e.studentId===st.id&&!e.archivedAt).reduce((z,e)=>z+Number(e.penalty||0),0));
+        if(ac>=3||rc>=3||score<15) alerts.push({st,ac,rc,score});
+      }
+      alerts.sort((x,y)=>(y.ac+y.rc)- (x.ac+x.rc)); alertList.innerHTML=alerts.length?alerts.map(x=>`<div class="manage-item"><div><b>${this.escapeHtml(x.st.nom)} ${this.escapeHtml(x.st.prenom)}</b><small> (${x.st.classId})</small></div><div>${x.ac} A · ${x.rc} R · ${x.score.toFixed(1)}/20</div></div>`).join(''):'<p class="help-text">Aucun élève à surveiller selon les seuils actuels.</p>';
     }
   }
 
@@ -1214,6 +1756,7 @@ class AbsenceApp {
       const score = Math.max(0, Math.min(maxScore, maxScore-deducted));
       const card=document.createElement('div');
       card.className=`activity-student-card ${this.activityClassMode ? 'activity-student-row' : ''}`;
+      if (this.activityExpandedStudents.has(student.id)) card.classList.add('activity-student-expanded');
       card.dataset.studentId=student.id;
       const actionButtons = categories.map(cat=>{
         const catActions=actions.filter(a=>a.categoryId===cat.id);
@@ -1248,27 +1791,34 @@ class AbsenceApp {
 
       if (this.activityClassMode) {
         card.innerHTML=`
-          <div class="activity-row-main">
+          <div class="activity-row-main activity-student-toggle" role="button" tabindex="0" onclick="app.toggleActivityStudent('${student.id}')" onkeydown="if(event.key==='Enter'||event.key===' ') app.toggleActivityStudent('${student.id}')">
             <div class="activity-row-number">${String(idx+1).padStart(2,'0')}</div>
             <div class="activity-row-name"><strong>${this.escapeHtml(student.nom)} ${this.escapeHtml(student.prenom)}</strong><span class="activity-event-count">${events.length} pénalité(s)</span></div>
             <div class="activity-score" aria-label="Note actuelle">${score.toFixed(2)}<span> / ${maxScore}</span></div>
             <button class="activity-row-history" title="Historique" onclick="app.showActivityHistory('${student.id}')">📋</button>
           </div>
-          <div class="activity-row-actions-area">${actionButtons}</div>`;
+          <div class="activity-row-actions-area activity-student-details">${actionButtons}</div>`;
       } else {
         card.innerHTML=`
-          <div class="activity-student-head">
+          <div class="activity-student-head activity-student-toggle" role="button" tabindex="0" onclick="app.toggleActivityStudent('${student.id}')" onkeydown="if(event.key==='Enter'||event.key===' ') app.toggleActivityStudent('${student.id}')">
             <div class="activity-student-name"><strong>${this.escapeHtml(student.nom)} ${this.escapeHtml(student.prenom)}</strong><div class="activity-event-count">${events.length} pénalité(s)</div></div>
             <div class="activity-score" aria-label="Note actuelle">${score.toFixed(2)}<span> / ${maxScore}</span></div>
           </div>
-          <div class="activity-categories">${actionButtons}</div>
-          <div class="activity-card-actions">
+          <div class="activity-categories activity-student-details">${actionButtons}</div>
+          <div class="activity-card-actions activity-student-details">
             <button class="btn btn-sm btn-secondary" onclick="app.showActivityHistory('${student.id}')">📋 Historique</button>
             <button class="btn btn-sm btn-secondary" onclick="app.showStudentDetail('${student.id}')">👁 Fiche élève</button>
           </div>`;
       }
       container.appendChild(card);
     }
+  }
+
+  toggleActivityStudent(studentId) {
+    if (this.activityExpandedStudents.has(studentId)) this.activityExpandedStudents.delete(studentId);
+    else this.activityExpandedStudents.add(studentId);
+    const card = document.querySelector(`.activity-student-card[data-student-id="${CSS.escape(studentId)}"]`);
+    if (card) card.classList.toggle('activity-student-expanded', this.activityExpandedStudents.has(studentId));
   }
 
   toggleActivityClassMode() {
@@ -1296,7 +1846,9 @@ class AbsenceApp {
     if (current <= 0) { alert('La note est déjà à 0/20.'); return; }
     const id=`acte_${Date.now()}_${Math.random().toString(36).slice(2,7)}`;
     await db.put('activityEvents',{id,studentId,categoryId:action.categoryId,actionId,penalty,date:this.getTodayISO(),createdAt:new Date().toISOString()});
+    await this.registerChange();
     this.activityLastAction=id;
+    await this.renderDashboard();
     this.showSaveIndicator();
     // Mise à jour instantanée de la carte concernée : pas de rechargement de toute la classe.
     const card = document.querySelector(`.activity-student-card[data-student-id="${CSS.escape(studentId)}"]`);
