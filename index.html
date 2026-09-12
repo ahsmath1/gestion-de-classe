@@ -85,6 +85,12 @@
 <span class="dash-sub" data-i18n="backupSub">JSON, Excel et CSV</span>
 </button>
 </div>
+<div class="dashboard-overview-grid" id="dashboard-overview-grid">
+  <div class="card dashboard-overview-item" id="dash-today"></div>
+  <div class="card dashboard-overview-item" id="dash-alerts"></div>
+  <div class="card dashboard-overview-item" id="dash-last-call"></div>
+  <div class="card dashboard-overview-item" id="dash-next-course"></div>
+</div>
 <div class="dashboard-insights">
   <div class="card dashboard-today-summary" id="dashboard-today-summary"></div>
   <div class="card dashboard-alerts" id="dashboard-alerts"></div>
@@ -125,6 +131,11 @@
 <span class="cnt-absent">Absents (A): <b id="cnt-a">0</b></span>
 <span class="cnt-retard">Retards (R): <b id="cnt-r">0</b></span>
 </div>
+<div class="rollcall-quick-actions">
+<button class="btn btn-sm btn-success" id="btn-all-present">✓ Tous présents</button>
+<button class="btn btn-sm btn-secondary" id="btn-intensive-mode">⚡ Cours intensif</button>
+</div>
+<p class="swipe-help">📱 Glisser un élève <b>←</b> = A · <b>→</b> = R</p>
 </div>
 <!-- Undo Bar -->
 <div class="undo-bar hidden" id="undo-container">
@@ -185,6 +196,11 @@
 <h3 data-i18n="remarksTitle">🗒 Remarques générales</h3>
 <p class="help-text" data-i18n="remarksHelp">Générées automatiquement à partir des pénalités, des devoirs maison, du travail à domicile et des comportements cochés ci-dessus.</p>
 <div class="general-remark-box" id="student-general-remark"></div>
+<div class="custom-remark-editor">
+<label for="student-custom-remark"><b>✍️ Remarque personnalisée</b></label>
+<textarea class="form-control" id="student-custom-remark" rows="3" placeholder="Écrire ici une remarque qui ne figure pas dans les propositions…"></textarea>
+<button class="btn btn-sm btn-secondary" onclick="app.saveStudentCustomRemark()">💾 Enregistrer la remarque</button>
+</div>
 <button class="btn btn-secondary" data-i18n="printStudentReportBtn" onclick="app.printStudentReport()">📄 Rapport de l'élève</button>
 </div>
 </section>
@@ -532,7 +548,8 @@
 <button class="btn btn-primary" data-i18n="saveMaxScore" onclick="app.saveActivityMaxScore()">Enregistrer la note maximale</button>
 </div>
 </div>
-<p class="help-text">Par défaut : 20/20. Le budget de chaque catégorie limite les pénalités cumulées dans cette catégorie.</p>
+<p class="help-text">Par défaut : 20/20. Les pénalités diminuent la note et les récompenses (+) l'augmentent, sans dépasser la note maximale.</p>
+<div id="quick-actions-config" class="quick-actions-config"></div>
 </div>
 <div class="action-buttons-row">
 <button class="btn btn-primary" data-i18n="addCategory" onclick="app.openActivityCategoryForm()">+ Ajouter une catégorie</button>
@@ -565,7 +582,12 @@
 <input id="activity-action-id" type="hidden"/>
 <div class="form-group"><label>Catégorie :</label><select class="form-control" id="activity-action-category"></select></div>
 <div class="form-group"><label>Libellé :</label><input class="form-control" id="activity-action-name" placeholder="Ex. Livre scolaire absent"/></div>
-<div class="form-group"><label>Pénalité :</label><input class="form-control" id="activity-action-penalty" min="0.1" step="0.1" type="number" value="0.5"/></div>
+<div class="form-group"><label>Type :</label>
+<select class="form-control" id="activity-action-type">
+<option value="penalty">− Pénalité</option>
+<option value="reward">+ Récompense</option>
+</select></div>
+<div class="form-group"><label>Points :</label><input class="form-control" id="activity-action-penalty" min="0.1" step="0.1" type="number" value="0.5"/></div>
 <div class="modal-actions">
 <button class="btn btn-secondary" data-i18n="cancel" onclick="app.closeModal('modal-activity-action')">Annuler</button>
 <button class="btn btn-primary" data-i18n="save" onclick="app.saveActivityAction()">Enregistrer</button>

@@ -111,3 +111,17 @@ Dans **Sauvegarde & Exports**, utilisez **« Fusionner une sauvegarde »** lorsq
 - Les sauvegardes JSON indiquent l'année scolaire concernée.
 - La fusion téléphone → PC est refusée si les deux sauvegardes concernent des années différentes, afin d'éviter les mélanges.
 - Le nom de l'application reste fixe : Gestion de classe.
+
+
+## Version 4.7 — Appel terminé en un seul geste et ergonomie mobile
+
+- Glissement d’un élève vers la gauche = A (absent), vers la droite = R (retard).
+- Bouton « Tous présents » pour initialiser rapidement l’appel puis corriger uniquement les A/R.
+- Glissement dans l’en-tête de l’appel pour passer au cours précédent/suivant sur iPhone.
+- Mémorisation locale de la dernière classe utilisée.
+- Indicateurs discrets « À faire / Fait » dans les cours du jour.
+- Mode « Cours intensif » pour consacrer l’écran à la liste des élèves.
+- 4 à 6 actions fréquentes personnalisables dans Activités & comportement.
+- Actions de comportement de type « + Récompense » en plus des pénalités « − ».
+- Le résumé de l’appel est affiché immédiatement après « APPEL TERMINÉ ».
+- Tableau de bord enrichi : Aujourd’hui, À surveiller, Dernier appel et Prochain cours.
