@@ -139,3 +139,13 @@ Dans **Sauvegarde & Exports**, utilisez **« Fusionner une sauvegarde »** lorsq
 
 ### Mise à jour depuis v4.7
 La mise à jour conserve la base IndexedDB existante. Le navigateur effectue automatiquement la migration du schéma lors du premier lancement de v5.0. Il est recommandé de faire une exportation JSON avant la première mise à jour majeure.
+
+
+## v5.1 — Activités intégrées à la fiche individuelle
+- Suppression de la rubrique générale « Activités & comportement » qui affichait tous les élèves.
+- Suppression du raccourci « Activités & comportement » du tableau de bord.
+- La gestion des activités est désormais directement intégrée dans la fiche individuelle de chaque élève.
+- Depuis « Élèves → Fiche », l’enseignant voit la note actuelle, l’historique et les boutons de pénalités `−` et récompenses `+` de l’élève.
+- Les actions restent configurables depuis la fiche individuelle.
+- La rubrique « Pratiques et comportements en mathématiques » reste dans la fiche individuelle et fonctionne avec les activités.
+- L’interface est optimisée pour une utilisation rapide sur iPhone.

@@ -215,7 +215,7 @@ class AbsenceApp {
   }
 
   i18n = {
-    fr: { subjectLabel:'Matière enseignée :', languageLabel:'Langue de l’application :', welcomeSubjectLabel:'Votre matière :', profilePrefix:'Profil :', profileNotConfigured:'Profil : non configuré', teacherOf:'Enseignant de', teacher:'Enseignant', teacherNotEntered:'Enseignant non renseigné', classesConfigured:'classe(s) configurée(s)', profileButton:'👤 Mon profil', startRollcall:"Lancer l'appel", todayCourses:'📅 Mes cours du jour', todayCoursesSub:"Saisie directe de l'appel", students:'👨‍🎓 Élèves', studentsSub:'Gestion et listes par classe', activities:'⭐ Activités & comportement', activitiesSub:'Notes sur 20 et pénalités en un clic', stats:'📊 Statistiques', statsSub:'Bilans et classements', history:'📋 Historique', historySub:'Recherche et modification', timetable:'⚙️ Emploi du temps', timetableSub:'Configuration des créneaux', calendar:'🗓 Calendrier', calendarSub:'Vacances et jours fériés', backup:'💾 Sauvegarde / Export', backupSub:'JSON, Excel et CSV', home:'← Accueil', todayTitle:'Cours du jour', today:"Aujourd'hui", studentsBack:'← Élèves', studentDetail:'Fiche Individuelle', activityDetail:'⭐ Activités et comportement', manageActivities:'Gérer les activités', attendanceHistory:'Historique de présence', configure:'⚙️ Configurer', newPeriod:'↻ Nouvelle période', courseMode:'⚡ Mode cours', statsTitle:'📊 Statistiques & Bilans', historyTitle:'📋 Historique des Appels', timetableTitle:'⚙️ Configuration Emploi du Temps', addCourse:'+ Ajouter un créneau', calendarTitlePrefix:'🗓 Calendrier Scolaire', addHoliday:'+ Ajouter Vacances / Férié / Exception', backupTitle:'💾 Sauvegarde & Exports', teacherProfile:'👤 Profil enseignant', editProfile:'Configurer / modifier mon profil', fullBackup:'💾 Sauvegarde Complète (JSON)', exportJson:'Exporter la sauvegarde JSON', restoreBackup:'↩ Restaurer une Sauvegarde', restoreData:'Restaurer les données', mergeBackup:'🔄 Fusionner une sauvegarde', mergeBackupHelp:'Ajoute les données du téléphone aux données du PC sans supprimer les anciennes données. Une sauvegarde automatique du PC sera téléchargée avant la fusion.', mergeData:'🔄 Fusionner avec les données actuelles', excelExport:'📊 Export Excel / CSV', printPdf:'🖨 Imprimer / Exporter en PDF', demoReset:'⚠️ Données de Démonstration & Réinitialisation', demoStudents:'Charger des Élèves de Démonstration', clearAll:'🗑 Effacer TOUTES les données', profileTitle:'👤 Mon profil enseignant', cancel:'Annuler', save:'Enregistrer', welcome:'👋 Bienvenue !', startSetup:'Commencer avec cette configuration', addStudent:'Ajouter un Élève', importStudents:"📥 Importer une liste d'élèves", startImport:"Lancer l'importation", manageClasses:'⚙️ Gérer les Classes', addClass:'Ajouter la classe', close:'Fermer', addCourseModal:'Ajouter un Créneau', addHolidayModal:'Ajouter des Vacances / Jour Férié', activityConfig:'⚙️ Configuration — Activités et comportement', saveMaxScore:'Enregistrer la note maximale', addCategory:'+ Ajouter une catégorie', addAction:'+ Ajouter une action', category:'Catégorie', actionPenalty:'Action / pénalité', activityHistory:'Historique', rollcallSaved:'APPEL ENREGISTRÉ', backToToday:'Retour aux cours du jour', searchStudent:'🔎 Rechercher un élève...', searchStudentByName:'🔎 Rechercher un élève par nom...', searchStudentName:'🔎 Nom ou prénom...', teacherNamePlaceholder:'ex. Ahmed EL ...', behaviorsTitle:'📐 Pratiques et comportements en mathématiques', behaviorsHelp:"Cochez uniquement les comportements qui ne sont pas encore maîtrisés chez l'élève. Une case cochée = un point à améliorer. Les cases non cochées n'apparaissent pas comme des problèmes.", behaviorsSaveBtn:'💾 Enregistrer les comportements', remarksTitle:'🗒 Remarques générales', remarksHelp:'Générées automatiquement à partir des pénalités, des devoirs maison, du travail à domicile et des comportements cochés ci-dessus.', printStudentReportBtn:"📄 Rapport de l'élève"},
+    fr: { subjectLabel:'Matière enseignée :', languageLabel:'Langue de l’application :', welcomeSubjectLabel:'Votre matière :', profilePrefix:'Profil :', profileNotConfigured:'Profil : non configuré', teacherOf:'Enseignant de', teacher:'Enseignant', teacherNotEntered:'Enseignant non renseigné', classesConfigured:'classe(s) configurée(s)', profileButton:'👤 Mon profil', startRollcall:"Lancer l'appel", todayCourses:'📅 Mes cours du jour', todayCoursesSub:"Saisie directe de l'appel", students:'👨‍🎓 Élèves', studentsSub:'Gestion et listes par classe', activities:'⭐ Activités & comportement', activitiesSub:'Notes sur 20 et pénalités en un clic', stats:'📊 Statistiques', statsSub:'Bilans et classements', history:'📋 Historique', historySub:'Recherche et modification', timetable:'⚙️ Emploi du temps', timetableSub:'Configuration des créneaux', calendar:'🗓 Calendrier', calendarSub:'Vacances et jours fériés', backup:'💾 Sauvegarde / Export', backupSub:'JSON, Excel et CSV', home:'← Accueil', todayTitle:'Cours du jour', today:"Aujourd'hui", studentsBack:'← Élèves', studentDetail:'Fiche Individuelle', activityDetail:'⭐ Activités', manageActivities:'⚙️ Configurer les activités', attendanceHistory:'Historique de présence', configure:'⚙️ Configurer', newPeriod:'↻ Nouvelle période', courseMode:'⚡ Mode cours', statsTitle:'📊 Statistiques & Bilans', historyTitle:'📋 Historique des Appels', timetableTitle:'⚙️ Configuration Emploi du Temps', addCourse:'+ Ajouter un créneau', calendarTitlePrefix:'🗓 Calendrier Scolaire', addHoliday:'+ Ajouter Vacances / Férié / Exception', backupTitle:'💾 Sauvegarde & Exports', teacherProfile:'👤 Profil enseignant', editProfile:'Configurer / modifier mon profil', fullBackup:'💾 Sauvegarde Complète (JSON)', exportJson:'Exporter la sauvegarde JSON', restoreBackup:'↩ Restaurer une Sauvegarde', restoreData:'Restaurer les données', mergeBackup:'🔄 Fusionner une sauvegarde', mergeBackupHelp:'Ajoute les données du téléphone aux données du PC sans supprimer les anciennes données. Une sauvegarde automatique du PC sera téléchargée avant la fusion.', mergeData:'🔄 Fusionner avec les données actuelles', excelExport:'📊 Export Excel / CSV', printPdf:'🖨 Imprimer / Exporter en PDF', demoReset:'⚠️ Données de Démonstration & Réinitialisation', demoStudents:'Charger des Élèves de Démonstration', clearAll:'🗑 Effacer TOUTES les données', profileTitle:'👤 Mon profil enseignant', cancel:'Annuler', save:'Enregistrer', welcome:'👋 Bienvenue !', startSetup:'Commencer avec cette configuration', addStudent:'Ajouter un Élève', importStudents:"📥 Importer une liste d'élèves", startImport:"Lancer l'importation", manageClasses:'⚙️ Gérer les Classes', addClass:'Ajouter la classe', close:'Fermer', addCourseModal:'Ajouter un Créneau', addHolidayModal:'Ajouter des Vacances / Jour Férié', activityConfig:'⚙️ Configuration — Activités et comportement', saveMaxScore:'Enregistrer la note maximale', addCategory:'+ Ajouter une catégorie', addAction:'+ Ajouter une action', category:'Catégorie', actionPenalty:'Action / pénalité', activityHistory:'Historique', rollcallSaved:'APPEL ENREGISTRÉ', backToToday:'Retour aux cours du jour', searchStudent:'🔎 Rechercher un élève...', searchStudentByName:'🔎 Rechercher un élève par nom...', searchStudentName:'🔎 Nom ou prénom...', teacherNamePlaceholder:'ex. Ahmed EL ...', behaviorsTitle:'📐 Pratiques et comportements en mathématiques', behaviorsHelp:"Cochez uniquement les comportements qui ne sont pas encore maîtrisés chez l'élève. Une case cochée = un point à améliorer. Les cases non cochées n'apparaissent pas comme des problèmes.", behaviorsSaveBtn:'💾 Enregistrer les comportements', remarksTitle:'🗒 Remarques générales', remarksHelp:'Générées automatiquement à partir des pénalités, des devoirs maison, du travail à domicile et des comportements cochés ci-dessus.', printStudentReportBtn:"📄 Rapport de l'élève"},
     ar: { subjectLabel:'المادة التي تدرسها:', languageLabel:'لغة التطبيق:', welcomeSubjectLabel:'المادة التي تدرسها:', profilePrefix:'الملف الشخصي:', profileNotConfigured:'الملف الشخصي: غير مُعد', teacherOf:'أستاذ مادة', teacher:'الأستاذ', teacherNotEntered:'اسم الأستاذ غير مُدخل', classesConfigured:'قسم(أقسام) مُعدّة', profileButton:'👤 ملفي الشخصي', startRollcall:'بدء تسجيل الحضور', todayCourses:'📅 حصصي اليوم', todayCoursesSub:'تسجيل الحضور مباشرة', students:'👨‍🎓 التلاميذ', studentsSub:'التدبير واللوائح حسب القسم', activities:'⭐ الأنشطة والسلوك', activitiesSub:'نقط من 20 وخصومات بنقرة واحدة', stats:'📊 الإحصائيات', statsSub:'الحصيلة والترتيب', history:'📋 السجل', historySub:'البحث والتعديل', timetable:'⚙️ استعمال الزمن', timetableSub:'إعداد الحصص', calendar:'🗓 التقويم', calendarSub:'العطل والأيام الرسمية', backup:'💾 النسخ والتصدير', backupSub:'JSON وExcel وCSV', home:'← الرئيسية', todayTitle:'حصص اليوم', today:'اليوم', studentsBack:'← التلاميذ', studentDetail:'بطاقة التلميذ', activityDetail:'⭐ الأنشطة والسلوك', manageActivities:'تدبير الأنشطة', attendanceHistory:'سجل الحضور', configure:'⚙️ الإعدادات', newPeriod:'↻ فترة جديدة', courseMode:'⚡ وضع الحصة', statsTitle:'📊 الإحصائيات والحصيلة', historyTitle:'📋 سجل الحضور', timetableTitle:'⚙️ إعداد استعمال الزمن', addCourse:'+ إضافة حصة', calendarTitlePrefix:'🗓 التقويم المدرسي', addHoliday:'+ إضافة عطلة / يوم رسمي / استثناء', backupTitle:'💾 النسخ والتصدير', teacherProfile:'👤 ملف الأستاذ', editProfile:'إعداد / تعديل ملفي', fullBackup:'💾 النسخ الاحتياطي الكامل (JSON)', exportJson:'تصدير النسخة الاحتياطية JSON', restoreBackup:'↩ استعادة نسخة احتياطية', restoreData:'استعادة البيانات', mergeBackup:'🔄 دمج نسخة احتياطية', mergeBackupHelp:'إضافة بيانات الهاتف إلى بيانات الحاسوب دون حذف البيانات القديمة. سيتم تنزيل نسخة احتياطية تلقائياً قبل الدمج.', mergeData:'🔄 دمج مع البيانات الحالية', excelExport:'📊 تصدير Excel / CSV', printPdf:'🖨 طباعة / تصدير PDF', demoReset:'⚠️ بيانات تجريبية وإعادة التهيئة', demoStudents:'تحميل تلاميذ تجريبيين', clearAll:'🗑 حذف جميع البيانات', profileTitle:'👤 ملف الأستاذ', cancel:'إلغاء', save:'حفظ', welcome:'👋 مرحباً!', startSetup:'بدء العمل بهذه الإعدادات', addStudent:'إضافة تلميذ', importStudents:'📥 استيراد لائحة التلاميذ', startImport:'بدء الاستيراد', manageClasses:'⚙️ تدبير الأقسام', addClass:'إضافة القسم', close:'إغلاق', addCourseModal:'إضافة حصة', addHolidayModal:'إضافة عطلة / يوم رسمي', activityConfig:'⚙️ إعدادات الأنشطة والسلوك', saveMaxScore:'حفظ النقطة القصوى', addCategory:'+ إضافة فئة', addAction:'+ إضافة إجراء', category:'الفئة', actionPenalty:'الإجراء / الخصم', activityHistory:'السجل', rollcallSaved:'تم تسجيل الحضور', backToToday:'العودة إلى حصص اليوم', searchStudent:'🔎 البحث عن تلميذ...', searchStudentByName:'🔎 البحث عن تلميذ بالاسم...', searchStudentName:'🔎 الاسم أو النسب...', teacherNamePlaceholder:'مثال: أحمد ...', behaviorsTitle:'📐 الممارسات والسلوكات في الرياضيات', behaviorsHelp:'ضع علامة فقط على السلوكات التي لم يتحكم فيها التلميذ بعد. العلامة تعني نقطة يجب تحسينها. السلوكات غير المعلَّمة لا تظهر كمشكلة.', behaviorsSaveBtn:'💾 حفظ السلوكات', remarksTitle:'🗒 ملاحظات عامة', remarksHelp:'تُولَّد تلقائيًا انطلاقًا من الخصومات والواجبات المنزلية والعمل في المنزل والسلوكات المعلَّمة أعلاه.', printStudentReportBtn:'📄 تقرير التلميذ'}
   };
 
@@ -1151,6 +1151,7 @@ class AbsenceApp {
     await this.renderStudentGeneralRemark(student);
     const customRemark = document.getElementById('student-custom-remark');
     if (customRemark) customRemark.value = student.customRemark || '';
+    await this.renderStudentActivityManager(studentId);
     this.navigateTo('view-student-detail');
   }
 
@@ -1926,6 +1927,7 @@ class AbsenceApp {
     this.activityLastAction=id;
     await this.renderDashboard();
     this.showSaveIndicator();
+    if (this.currentStudentDetailId === studentId) await this.renderStudentActivityManager(studentId);
     // Mise à jour instantanée de la carte concernée : pas de rechargement de toute la classe.
     const card = document.querySelector(`.activity-student-card[data-student-id="${CSS.escape(studentId)}"]`);
     if (card) {
@@ -1971,6 +1973,7 @@ class AbsenceApp {
     if(!confirm('Annuler cette pénalité ?')) return;
     await db.delete('activityEvents',eventId);
     this.showActivityHistory(studentId);
+    if (this.currentStudentDetailId === studentId) await this.renderStudentActivityManager(studentId);
     await this.renderActivitiesView();
     this.showSaveIndicator();
   }
@@ -2084,6 +2087,64 @@ class AbsenceApp {
     await db.put('settings',{key:'activityCurrentPeriod',value:periodId});
     // Recréer la note courante par absence d'événements actifs : les anciens restent consultables.
     this.showSaveIndicator(); await this.renderActivitiesView();
+  }
+
+
+  // --- Gestion individuelle des activités ---
+  async renderStudentActivityManager(studentId) {
+    const container = document.getElementById('student-activity-manager');
+    if (!container || !studentId) return;
+    const student = await db.get('students', studentId);
+    if (!student) return;
+
+    const {categories, actions, maxScore} = await this.getActivityConfig();
+    const allEvents = await db.getAll('activityEvents');
+    const events = allEvents.filter(e => e.studentId === studentId && !e.archivedAt);
+    const adjustment = events.reduce((sum,e) => sum + Number(e.penalty || 0), 0);
+    const score = Math.max(0, Math.min(maxScore, maxScore - adjustment));
+
+    const counts = events.length;
+    const rewardCount = events.filter(e => Number(e.penalty || 0) < 0).length;
+    const penaltyCount = events.filter(e => Number(e.penalty || 0) > 0).length;
+
+    const actionButton = (a, scoreNow, remaining) => {
+      const isReward = a.type === 'reward';
+      const amount = Number(a.penalty || 0);
+      const disabled = isReward
+        ? scoreNow >= maxScore - 1e-9
+        : (scoreNow <= 0 || (remaining > 0 && amount > remaining + 1e-9) || remaining <= 1e-9);
+      return `<button class="btn btn-sm activity-action-btn ${isReward ? 'reward-action' : ''}"
+        data-action-id="${this.escapeHtml(a.id)}" ${disabled ? 'disabled' : ''}
+        onclick="app.addActivityPenalty('${this.escapeHtml(studentId)}','${this.escapeHtml(a.id)}')">
+        ${isReward ? '➕' : '➖'} ${this.escapeHtml(a.name)}
+        <b>${isReward ? '+' : '−'}${amount.toFixed(2)}</b>
+      </button>`;
+    };
+
+    container.innerHTML = `
+      <div class="student-activity-manager">
+        <div class="student-activity-score-line">
+          <div><span class="help-text">Note actuelle</span><strong>${score.toFixed(2)} / ${maxScore}</strong></div>
+          <div class="student-activity-event-count">${counts} événement${counts > 1 ? 's' : ''} · ${penaltyCount} pénalité${penaltyCount > 1 ? 's' : ''} · ${rewardCount} récompense${rewardCount > 1 ? 's' : ''}</div>
+          <button class="btn btn-sm btn-secondary" onclick="app.showActivityHistory('${this.escapeHtml(studentId)}')">📋 Historique</button>
+        </div>
+        ${categories.map(cat => {
+          const catEvents = events.filter(e => e.categoryId === cat.id);
+          const catAdjustment = catEvents.reduce((sum,e) => sum + Number(e.penalty || 0), 0);
+          const remaining = Math.max(0, Number(cat.maxPoints || 0) - catAdjustment);
+          const catActions = actions.filter(a => a.categoryId === cat.id);
+          return `<div class="student-activity-category">
+            <div class="student-activity-category-title">
+              <strong>${cat.icon || '📌'} ${this.escapeHtml(cat.name)}</strong>
+              <span>−${catAdjustment.toFixed(2)} / ${Number(cat.maxPoints || 0)}</span>
+            </div>
+            <div class="student-activity-actions">
+              ${catActions.length ? catActions.map(a => actionButton(a, score, remaining)).join('') : '<span class="help-text">Aucune action configurée.</span>'}
+            </div>
+          </div>`;
+        }).join('')}
+        ${!categories.length ? '<p class="help-text">Aucune catégorie d’activité n’est configurée. Utilisez « Configurer les activités » pour commencer.</p>' : ''}
+      </div>`;
   }
 
   async renderStudentActivityDetail(studentId) {
@@ -2430,33 +2491,6 @@ class AbsenceApp {
     if(el && last && [...el.options].some(o=>o.value===last)) el.value=last;
   };
 
-  // --- Actions fréquentes 4–6 ---
-  proto.getQuickActions = async function() {
-    const saved=(await db.get('settings','quickActivityActions'))?.value;
-    if(Array.isArray(saved) && saved.length) return saved.slice(0,6);
-    const actions=(await db.getAll('activityActions')).filter(a=>a.active!==false);
-    return actions.slice(0,5).map(a=>a.id);
-  };
-  proto.saveQuickActions = async function() {
-    const ids=[...document.querySelectorAll('#quick-actions-config input[type=checkbox]:checked')].map(x=>x.value).slice(0,6);
-    if(ids.length<2){alert('Choisissez au moins 2 actions fréquentes (et jusqu’à 6).');return;}
-    await db.put('settings',{key:'quickActivityActions',value:ids});
-    await this.renderActivitySettings();
-    await this.renderActivitiesView();
-    this.showSaveIndicator();
-  };
-
-  const _renderActivitySettings_v47=proto.renderActivitySettings;
-  proto.renderActivitySettings=async function(){
-    await _renderActivitySettings_v47.call(this);
-    const box=document.getElementById('quick-actions-config'); if(!box)return;
-    const actions=(await db.getAll('activityActions')).filter(a=>a.active!==false);
-    const selected=await this.getQuickActions();
-    box.innerHTML=`<b>⭐ Actions fréquentes</b><p class="help-text">Cochez 2 à 6 actions à afficher en priorité pendant le cours.</p>
-      <div class="quick-actions-config-grid">${actions.map(a=>`<label class="quick-action-check"><input type="checkbox" value="${this.escapeHtml(a.id)}" ${selected.includes(a.id)?'checked':''}> ${a.type==='reward'?'➕':'➖'} ${this.escapeHtml(a.name)}</label>`).join('')}</div>
-      <button class="btn btn-sm btn-primary" style="margin-top:8px" onclick="app.saveQuickActions()">Enregistrer les actions fréquentes</button>`;
-  };
-
   // --- Récompenses : actions "+" avec points positifs, plafonnées à la note max ---
   const _openActivityActionForm_v47=proto.openActivityActionForm;
   proto.openActivityActionForm=async function(id='',categoryId=''){
@@ -2493,6 +2527,7 @@ class AbsenceApp {
     const id=`acte_${Date.now()}_${Math.random().toString(36).slice(2,7)}`;
     await db.put('activityEvents',{id,studentId,categoryId:action.categoryId,actionId,penalty:-amount,date:this.getTodayISO(),createdAt:new Date().toISOString(),type:'reward'});
     await this.registerChange(); this.activityLastAction=id; this.showSaveIndicator();
+    if (this.currentStudentDetailId === studentId) await this.renderStudentActivityManager(studentId);
     await this.renderActivitiesView(); await this.renderDashboard();
   };
 
@@ -2502,44 +2537,6 @@ class AbsenceApp {
     const events=(await db.getAll('activityEvents')).filter(e=>e.studentId===studentId&&!e.archivedAt);
     const adjustment=events.reduce((sum,e)=>sum+Number(e.penalty||0),0);
     return Math.max(0,Math.min(maxScore,maxScore-adjustment));
-  };
-
-  // Affichage +/− après le rendu existant
-  const _renderActivitiesView_v47=proto.renderActivitiesView;
-  proto.renderActivitiesView=async function(){
-    await _renderActivitiesView_v47.call(this);
-    const selected=await this.getQuickActions();
-    document.querySelectorAll('.activity-student-card').forEach(card=>{
-      const old=card.querySelector('.quick-actions-bar'); if(old) old.remove();
-      const bar=document.createElement('div'); bar.className='quick-actions-bar';
-      selected.forEach(id=>{
-        const a=window.__v47ActionsCache?.find(x=>x.id===id);
-        if(!a || a.active===false)return;
-        const b=document.createElement('button'); b.className='btn btn-secondary quick-action-btn activity-action-btn'+(a.type==='reward'?' reward-action':'');
-        b.dataset.actionId=a.id; b.innerHTML=`${a.type==='reward'?'➕':'➖'} ${this.escapeHtml(a.name)} <b>${a.type==='reward'?'+':'−'}${Number(a.penalty).toFixed(2)}</b>`;
-        b.onclick=()=>this.addActivityPenalty(card.dataset.studentId,a.id);
-        bar.appendChild(b);
-      });
-      if(bar.children.length) card.prepend(bar);
-      // Corrige aussi les boutons d'actions standards pour les récompenses.
-      card.querySelectorAll('.activity-action-btn[data-action-id]').forEach(btn=>{
-        const a=window.__v47ActionsCache?.find(x=>x.id===btn.dataset.actionId);
-        if(!a)return;
-        const sign=a.type==='reward'?'+':'−';
-        btn.classList.toggle('reward-action',a.type==='reward');
-        const b=btn.querySelector('b');
-        if(b)b.textContent=`${sign}${Number(a.penalty).toFixed(2)}`;
-        btn.title=`${a.name} — ${sign}${Number(a.penalty).toFixed(2)}`;
-      });
-    });
-  };
-
-  // Cache des actions pour les boutons rapides
-  const _getQuickActions_v47=proto.getQuickActions;
-  proto.getQuickActions=async function(){
-    const ids=await _getQuickActions_v47.call(this);
-    window.__v47ActionsCache=(await db.getAll('activityActions')).filter(a=>a.active!==false);
-    return ids;
   };
 
   // Rendu de la liste de présence : indicateurs discrets
@@ -2595,9 +2592,49 @@ class AbsenceApp {
   proto.init = async function() {
     await _init_v50.call(this);
     // Marqueur lisible par l'interface et les sauvegardes.
-    await db.put('settings',{key:'appVersion',value:'5.0.0'});
+    await db.put('settings',{key:'appVersion',value:'5.1.0'});
     await db.put('settings',{key:'dbSchemaVersion',value:7});
     this.showSaveIndicator();
+  };
+})();
+
+
+/* =========================
+   v5.1 — Activités intégrées à la fiche individuelle
+   ========================= */
+(() => {
+  const proto = AbsenceApp.prototype;
+
+  const _renderActivitySettings_v51 = proto.renderActivitySettings;
+  proto.renderActivitySettings = async function() {
+    await _renderActivitySettings_v51.call(this);
+    if (this.currentStudentDetailId && document.getElementById('student-activity-manager')) {
+      await this.renderStudentActivityManager(this.currentStudentDetailId);
+    }
+  };
+
+  const _saveActivityAction_v51 = proto.saveActivityAction;
+  proto.saveActivityAction = async function() {
+    await _saveActivityAction_v51.call(this);
+    if (this.currentStudentDetailId && document.getElementById('student-activity-manager')) {
+      await this.renderStudentActivityManager(this.currentStudentDetailId);
+    }
+  };
+
+  const _deleteActivityAction_v51 = proto.deleteActivityAction;
+  proto.deleteActivityAction = async function(id) {
+    await _deleteActivityAction_v51.call(this,id);
+    if (this.currentStudentDetailId && document.getElementById('student-activity-manager')) {
+      await this.renderStudentActivityManager(this.currentStudentDetailId);
+    }
+  };
+
+  const _deleteActivityCategory_v51 = proto.deleteActivityCategory;
+  proto.deleteActivityCategory = async function(id) {
+    await _deleteActivityCategory_v51.call(this,id);
+    if (this.currentStudentDetailId && document.getElementById('student-activity-manager')) {
+      await this.renderStudentActivityManager(this.currentStudentDetailId);
+    }
   };
 })();
 

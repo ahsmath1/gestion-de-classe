@@ -769,19 +769,13 @@ button:focus-visible,input:focus-visible,select:focus-visible,textarea:focus-vis
 .course-card .course-status-pill{font-size:.7rem;padding:3px 7px;border-radius:999px}
 .course-card .course-status-pill.done{opacity:.62}
 .course-card .course-status-pill.pending{opacity:.75}
-.quick-actions-config{margin-top:10px;border-top:1px solid var(--border);padding-top:10px}
-.quick-actions-config-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:6px}
-.quick-action-check{display:flex;align-items:center;gap:7px;padding:7px;border:1px solid var(--border);border-radius:8px;font-size:.82rem}
-.quick-actions-bar{display:flex;gap:5px;flex-wrap:wrap;padding:5px 0 7px}
-.quick-action-btn{font-size:.74rem!important;padding:5px 7px!important}
 .activity-action-btn.reward-action{border-color:#10b981!important}
 .activity-action-btn.reward-action b{color:#059669!important}
 @media(max-width:600px){
  .dashboard-overview-grid{grid-template-columns:repeat(2,1fr)}
  .rollcall-quick-actions .btn{flex:1;min-height:42px}
  .student-row{min-height:54px}
- .quick-actions-config-grid{grid-template-columns:1fr}
-}
+ }
 
 .custom-remark-editor{margin-top:12px;padding-top:10px;border-top:1px solid var(--border)}
 .custom-remark-editor label{display:block;margin-bottom:6px}
@@ -795,3 +789,77 @@ button:focus-visible,input:focus-visible,select:focus-visible,textarea:focus-vis
 .app-toast.show{opacity:1;transform:translateY(0)}
 .app-toast-success{border-left:4px solid #16a34a}.app-toast-warning{border-left:4px solid #d97706}.app-toast-error{border-left:4px solid #dc2626}.app-toast-info{border-left:4px solid #2563eb}
 @media (max-width:700px){#toast-host{bottom:calc(68px + env(safe-area-inset-bottom));width:calc(100vw - 24px)}.app-toast{font-size:.88rem}}
+
+
+/* v5.1 — Gestion individuelle des activités */
+.student-activities-card .student-activity-manager {
+  margin-top: 10px;
+}
+.student-activity-score-line {
+  display:flex;
+  align-items:center;
+  justify-content:space-between;
+  gap:10px;
+  flex-wrap:wrap;
+  padding:10px;
+  border:1px solid var(--border);
+  border-radius:12px;
+  background:var(--surface-2, var(--card-bg));
+}
+.student-activity-score-line strong {
+  display:block;
+  font-size:1.35rem;
+  margin-top:2px;
+}
+.student-activity-event-count {
+  font-size:.85rem;
+  color:var(--muted);
+}
+.student-activity-category {
+  margin-top:10px;
+  padding:10px;
+  border:1px solid var(--border);
+  border-radius:12px;
+}
+.student-activity-category-title {
+  display:flex;
+  justify-content:space-between;
+  align-items:center;
+  gap:8px;
+  margin-bottom:8px;
+}
+.student-activity-category-title span {
+  font-size:.82rem;
+  color:var(--muted);
+}
+.student-activity-actions {
+  display:flex;
+  flex-wrap:wrap;
+  gap:7px;
+}
+.student-activity-actions .activity-action-btn {
+  min-height:42px;
+  touch-action:manipulation;
+}
+.student-activity-actions .reward-action {
+  border-color:rgba(22,163,74,.45);
+}
+@media (max-width:600px) {
+  .student-activity-score-line {
+    align-items:stretch;
+  }
+  .student-activity-score-line > * {
+    flex:1 1 45%;
+  }
+  .student-activity-score-line button {
+    width:100%;
+  }
+  .student-activity-actions {
+    display:grid;
+    grid-template-columns:repeat(2,minmax(0,1fr));
+  }
+  .student-activity-actions .activity-action-btn {
+    width:100%;
+    padding:9px 7px;
+  }
+}

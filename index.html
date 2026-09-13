@@ -54,11 +54,6 @@
 <span class="dash-title">Élèves</span>
 <span class="dash-sub" data-i18n="studentsSub">Gestion et listes par classe</span>
 </button>
-<button class="dash-btn" onclick="app.navigateTo('view-activities')">
-<span class="dash-icon">⭐</span>
-<span class="dash-title">Activités &amp; comportement</span>
-<span class="dash-sub" data-i18n="activitiesSub">Notes sur 20 et pénalités en un clic</span>
-</button>
 <button class="dash-btn" onclick="app.navigateTo('view-stats')">
 <span class="dash-icon">📊</span>
 <span class="dash-title">Statistiques</span>
@@ -179,10 +174,13 @@
 <h2 data-i18n="studentDetail">Fiche Individuelle</h2>
 </div>
 <div class="detail-card" id="student-detail-card"></div>
-<div class="card">
-<h3 data-i18n="activityDetail">⭐ Activités et comportement</h3>
+<div class="card student-activities-card" id="student-activities-card">
+<h3 data-i18n="activityDetail">⭐ Activités</h3>
 <div id="student-activity-summary"></div>
-<button class="btn btn-primary" data-i18n="manageActivities" onclick="app.navigateTo('view-activities')">Gérer les activités</button>
+<div id="student-activity-manager"></div>
+<div class="action-buttons-row" style="margin-top:10px;">
+<button class="btn btn-secondary" data-i18n="configure" onclick="app.openModal('modal-activity-settings'); app.renderActivitySettings()">⚙️ Configurer les activités</button>
+</div>
 </div>
 <h3 data-i18n="attendanceHistory">Historique de présence</h3>
 <div class="history-table-container" id="student-detail-history"></div>
@@ -204,36 +202,7 @@
 <button class="btn btn-secondary" data-i18n="printStudentReportBtn" onclick="app.printStudentReport()">📄 Rapport de l'élève</button>
 </div>
 </section>
-<!-- VIEW 6: ACTIVITÉS ET COMPORTEMENT -->
-<section class="view" id="view-activities">
-<div class="view-header">
-<button class="btn-back" data-i18n="home" onclick="app.navigateTo('view-home')">← Accueil</button>
-<h2 data-i18n="activities">⭐ Activités &amp; comportement</h2>
-</div>
-<div class="controls-card">
-<div class="form-row">
-<div class="form-group">
-<label>Classe :</label>
-<select class="form-control" id="activity-class-filter" onchange="app.renderActivitiesView()"></select>
-</div>
-<div class="form-group">
-<label>Recherche :</label>
-<input class="form-control" data-i18n-placeholder="searchStudentName" id="activity-student-search" oninput="app.renderActivitiesView()" placeholder="🔎 Nom ou prénom..."/>
-</div>
-</div>
-<div class="action-buttons-row activity-toolbar">
-<button class="btn btn-secondary" data-i18n="configure" onclick="app.openModal('modal-activity-settings'); app.renderActivitySettings()">⚙️ Configurer</button>
-<button class="btn btn-warning" data-i18n="newPeriod" onclick="app.resetActivityPeriod()">↻ Nouvelle période</button>
-<button class="btn btn-primary" data-i18n="courseMode" id="activity-mode-toggle" onclick="app.toggleActivityClassMode()">⚡ Mode cours</button>
-</div>
-<div class="activity-quick-help">💡 <b>Mode cours :</b> touchez directement une pénalité. La note se met à jour instantanément.</div>
-</div>
-<div class="card help-text">
-        Chaque élève commence à <b>20/20</b>. Un clic sur une action applique automatiquement la pénalité configurée. Les pénalités sont conservées dans l'historique et peuvent être annulées.
-      </div>
-<div class="activities-students-list" id="activities-students-list"></div>
-</section>
-<!-- VIEW 7: STATISTIQUES -->
+<!-- VIEW 6: STATISTIQUES -->
 <section class="view" id="view-stats">
 <div class="view-header">
 <button class="btn-back" data-i18n="home" onclick="app.navigateTo('view-home')">← Accueil</button>
@@ -549,7 +518,6 @@
 </div>
 </div>
 <p class="help-text">Par défaut : 20/20. Les pénalités diminuent la note et les récompenses (+) l'augmentent, sans dépasser la note maximale.</p>
-<div id="quick-actions-config" class="quick-actions-config"></div>
 </div>
 <div class="action-buttons-row">
 <button class="btn btn-primary" data-i18n="addCategory" onclick="app.openActivityCategoryForm()">+ Ajouter une catégorie</button>
