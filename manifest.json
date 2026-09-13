@@ -1,7 +1,7 @@
 {
   "name": "Gestion de classe",
   "short_name": "Gestion de classe",
-  "description": "Application complète de gestion de classe, des absences, du suivi pédagogique et des activités",
+  "description": "Gestion de classe — présence, suivi pédagogique, comportement et rapports, hors connexion",
   "start_url": "./index.html",
   "scope": "./",
   "display": "standalone",

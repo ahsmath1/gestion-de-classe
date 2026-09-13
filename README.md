@@ -125,3 +125,17 @@ Dans **Sauvegarde & Exports**, utilisez **« Fusionner une sauvegarde »** lorsq
 - Actions de comportement de type « + Récompense » en plus des pénalités « − ».
 - Le résumé de l’appel est affiché immédiatement après « APPEL TERMINÉ ».
 - Tableau de bord enrichi : Aujourd’hui, À surveiller, Dernier appel et Prochain cours.
+
+
+## Version 5.0 — Fiabilité et données
+- Schéma IndexedDB 7 avec index `schoolYear` pour préparer les requêtes par année.
+- Normalisation automatique des anciennes données vers l'année active, sans écraser une année déjà renseignée.
+- Restaurations JSON et restaurations automatiques effectuées dans une transaction multi-stores : en cas d'échec, l'opération n'est pas validée partiellement.
+- Sauvegarde locale de sécurité créée avant une restauration.
+- Service Worker versionné en `gestion-classe-v5.0.0` avec nettoyage des anciens caches et stratégie réseau d'abord pour la navigation.
+- Notifications discrètes (toast) pour les opérations importantes.
+- Les actions fréquentes sont configurables de 2 à 6.
+- Les données restent locales dans IndexedDB ; aucune synchronisation serveur n'est introduite.
+
+### Mise à jour depuis v4.7
+La mise à jour conserve la base IndexedDB existante. Le navigateur effectue automatiquement la migration du schéma lors du premier lancement de v5.0. Il est recommandé de faire une exportation JSON avant la première mise à jour majeure.

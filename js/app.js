@@ -83,18 +83,13 @@ class AbsenceApp {
   async restoreYearArchive(year) {
     const archive = await db.get('schoolYears', year);
     if (!archive?.data) throw new Error('Année archivée introuvable.');
-    await this.clearYearData();
     const d = archive.data;
-    for (const x of (d.classes||[])) await db.put('classes', x);
-    for (const x of (d.students||[])) await db.put('students', x);
-    for (const x of (d.timetable||[])) await db.put('timetable', x);
-    for (const x of (d.attendance||[])) await db.put('attendance', x);
-    for (const x of (d.calendar||[])) await db.put('calendar', x);
-    for (const x of (d.sessions||[])) await db.put('sessions', x);
-    for (const x of (d.activityCategories||[])) await db.put('activityCategories', x);
-    for (const x of (d.activityActions||[])) await db.put('activityActions', x);
-    for (const x of (d.activityEvents||[])) await db.put('activityEvents', x);
-    for (const x of (d.settings||[])) await db.put('settings', x);
+    await db.replaceStores({
+      classes:d.classes||[], students:d.students||[], timetable:d.timetable||[],
+      attendance:d.attendance||[], calendar:d.calendar||[], sessions:d.sessions||[],
+      activityCategories:d.activityCategories||[], activityActions:d.activityActions||[],
+      activityEvents:d.activityEvents||[], settings:d.settings||[]
+    });
   }
 
   yearDates(year) {
@@ -355,6 +350,22 @@ class AbsenceApp {
     this.saveTimer = setTimeout(() => el.classList.remove('active'), 2500);
   }
 
+  showToast(message, type='success', duration=2200) {
+    let host = document.getElementById('toast-host');
+    if (!host) {
+      host = document.createElement('div');
+      host.id = 'toast-host';
+      host.setAttribute('aria-live','polite');
+      document.body.appendChild(host);
+    }
+    const toast = document.createElement('div');
+    toast.className = `app-toast app-toast-${type}`;
+    toast.textContent = message;
+    host.appendChild(toast);
+    requestAnimationFrame(() => toast.classList.add('show'));
+    setTimeout(() => { toast.classList.remove('show'); setTimeout(() => toast.remove(), 220); }, duration);
+  }
+
   setupTheme() {
     const savedTheme = localStorage.getItem('theme') || 'light';
     document.documentElement.setAttribute('data-theme', savedTheme);
@@ -370,9 +381,26 @@ class AbsenceApp {
   }
 
   registerServiceWorker() {
-    if ('serviceWorker' in navigator) {
-      navigator.serviceWorker.register('./service-worker.js').catch(err => console.log('SW Registration Failed', err));
-    }
+    if (!('serviceWorker' in navigator)) return;
+    const hadController = !!navigator.serviceWorker.controller;
+    navigator.serviceWorker.register('./service-worker.js').then(reg => {
+      reg.update().catch(()=>{});
+      reg.addEventListener('updatefound', () => {
+        const worker = reg.installing;
+        if (!worker) return;
+        worker.addEventListener('statechange', () => {
+          if (worker.state === 'installed' && navigator.serviceWorker.controller) {
+            this.showToast('Nouvelle version disponible — mise à jour en cours…','info',3200);
+          }
+        });
+      });
+    }).catch(err => console.log('SW Registration Failed', err));
+    navigator.serviceWorker.addEventListener('controllerchange', () => {
+      if (hadController && !sessionStorage.getItem('v5_sw_reloaded')) {
+        sessionStorage.setItem('v5_sw_reloaded','1');
+        location.reload();
+      }
+    });
   }
 
   navigateTo(viewId) {
@@ -441,6 +469,23 @@ class AbsenceApp {
     if (scale === 'xlarge') document.body.classList.add('ui-xlarge');
   }
 
+  async createLocalSafetyBackup(reason='sécurité') {
+    try {
+      const data = await this.getBackupData();
+      const key = `gestion_classe_safety_${this.activeSchoolYear}`;
+      localStorage.setItem(key, JSON.stringify({
+        savedAt: new Date().toISOString(),
+        reason,
+        appVersion: '5.0.0',
+        data
+      }));
+      return true;
+    } catch (e) {
+      console.warn('Sauvegarde locale de sécurité impossible', e);
+      return false;
+    }
+  }
+
   async registerChange() {
     this.changeCounter++;
     const interval = Number((await db.get('settings','autoBackupInterval'))?.value || 0);
@@ -455,15 +500,20 @@ class AbsenceApp {
 
   async restoreLocalAutoBackup() {
     const raw=localStorage.getItem(`gestion_classe_autobackup_${this.activeSchoolYear}`);
-    if(!raw){alert('Aucune sauvegarde automatique locale disponible pour cette année.');return;}
+    if(!raw){this.showToast('Aucune sauvegarde automatique locale disponible.','warning');return;}
     try {
       const pack=JSON.parse(raw);
-      if(!confirm(`Restaurer la sauvegarde automatique du ${new Date(pack.savedAt).toLocaleString()} ?\n\nCette restauration remplacera les données actuelles.`))return;
-      const data=pack.data;
-      for(const store of ['classes','students','timetable','attendance','calendar','sessions','activityCategories','activityActions','activityEvents','settings']) if(db.db.objectStoreNames.contains(store)) await db.clearStore(store);
-      for(const x of data.classes||[])await db.put('classes',x); for(const x of data.students||[])await db.put('students',x); for(const x of data.timetable||[])await db.put('timetable',x); for(const x of data.attendance||[])await db.put('attendance',x); for(const x of data.calendar||[])await db.put('calendar',x); for(const x of data.sessions||[])await db.put('sessions',x); for(const x of data.activityCategories||[])await db.put('activityCategories',x); for(const x of data.activityActions||[])await db.put('activityActions',x); for(const x of data.activityEvents||[])await db.put('activityEvents',x); for(const x of data.settings||[])await db.put('settings',x);
+      if(!confirm(`Restaurer la sauvegarde automatique du ${new Date(pack.savedAt).toLocaleString()} ?\n\nUne sauvegarde de sécurité de l'état actuel sera créée avant la restauration.`))return;
+      await this.createLocalSafetyBackup('avant restauration automatique');
+      const data=pack.data || {};
+      await db.replaceStores({
+        classes:data.classes||[], students:data.students||[], timetable:data.timetable||[],
+        attendance:data.attendance||[], calendar:data.calendar||[], sessions:data.sessions||[],
+        activityCategories:data.activityCategories||[], activityActions:data.activityActions||[],
+        activityEvents:data.activityEvents||[], settings:data.settings||[]
+      });
       location.reload();
-    } catch(e){alert('Impossible de restaurer la sauvegarde automatique : '+e.message);}
+    } catch(e){this.showToast('Impossible de restaurer la sauvegarde automatique : '+e.message,'error');}
   }
 
   async loadFavorites() {
@@ -2102,12 +2152,26 @@ class AbsenceApp {
   }
 
   async importJSON() {
-    const input=document.getElementById('import-json-file'); if(!input.files.length){alert('Veuillez choisir un fichier JSON.');return;}
-    try { const data=JSON.parse(await input.files[0].text()); if(data.schoolYear && data.schoolYear !== this.activeSchoolYear && !confirm(`Cette sauvegarde concerne ${data.schoolYear}, alors que l’année active est ${this.activeSchoolYear}.\n\nContinuer la restauration ?`)) return; if(!data.classes||!data.students||!data.timetable||!data.attendance||!data.calendar)throw new Error('Structure de sauvegarde incomplète.'); if(!confirm('La restauration remplacera les données actuelles. Continuer ?'))return;
-      for(const store of ['classes','students','timetable','attendance','calendar','sessions','activityCategories','activityActions','activityEvents','settings']) if(db.db.objectStoreNames.contains(store)) await db.clearStore(store);
-      for(const x of data.classes)await db.put('classes',x); for(const x of data.students)await db.put('students',x); for(const x of data.timetable)await db.put('timetable',x); for(const x of data.attendance)await db.put('attendance',x); for(const x of data.calendar)await db.put('calendar',x); for(const x of (data.sessions||[]))await db.put('sessions',x); for(const x of (data.activityCategories||[]))await db.put('activityCategories',x); for(const x of (data.activityActions||[]))await db.put('activityActions',x); for(const x of (data.activityEvents||[]))await db.put('activityEvents',x); for(const x of (data.settings||[]))await db.put('settings',x); for(const x of (data.schoolYears||[])) if(db.db.objectStoreNames.contains('schoolYears')) await db.put('schoolYears',x);
-      alert('Restauration réussie.'); location.reload();
-    } catch(e){alert('Erreur lors de la restauration : '+e.message);}
+    const input=document.getElementById('import-json-file'); if(!input.files.length){this.showToast('Veuillez choisir un fichier JSON.','warning');return;}
+    try {
+      const data=JSON.parse(await input.files[0].text());
+      if(data.schoolYear && data.schoolYear !== this.activeSchoolYear && !confirm(`Cette sauvegarde concerne ${data.schoolYear}, alors que l’année active est ${this.activeSchoolYear}.\n\nContinuer la restauration ?`)) return;
+      if(!data.classes||!data.students||!data.timetable||!data.attendance||!data.calendar)throw new Error('Structure de sauvegarde incomplète.');
+      if(!confirm('La restauration remplacera les données actuelles. Une sauvegarde locale de sécurité sera créée avant toute modification. Continuer ?'))return;
+      await this.createLocalSafetyBackup('avant restauration JSON');
+      const payload = {
+        classes:data.classes||[], students:data.students||[], timetable:data.timetable||[],
+        attendance:data.attendance||[], calendar:data.calendar||[], sessions:data.sessions||[],
+        activityCategories:data.activityCategories||[], activityActions:data.activityActions||[],
+        activityEvents:data.activityEvents||[], settings:data.settings||[]
+      };
+      // Un ancien export v4.x peut ne pas contenir schoolYears : dans ce cas,
+      // on conserve les archives locales au lieu de les effacer.
+      if (Array.isArray(data.schoolYears)) payload.schoolYears = data.schoolYears;
+      await db.replaceStores(payload);
+      this.showToast('Restauration réussie.','success');
+      setTimeout(()=>location.reload(),450);
+    } catch(e){this.showToast('Erreur lors de la restauration : '+e.message,'error',3500);}
   }
 
   async mergeJSON() {
@@ -2366,7 +2430,7 @@ class AbsenceApp {
     if(el && last && [...el.options].some(o=>o.value===last)) el.value=last;
   };
 
-  // --- Actions fréquentes 2–6 ---
+  // --- Actions fréquentes 4–6 ---
   proto.getQuickActions = async function() {
     const saved=(await db.get('settings','quickActivityActions'))?.value;
     if(Array.isArray(saved) && saved.length) return saved.slice(0,6);
@@ -2388,7 +2452,7 @@ class AbsenceApp {
     const box=document.getElementById('quick-actions-config'); if(!box)return;
     const actions=(await db.getAll('activityActions')).filter(a=>a.active!==false);
     const selected=await this.getQuickActions();
-    box.innerHTML=`<b>⭐ Actions fréquentes</b><p class="help-text">Cochez 2 à 6 actions fréquentes. Elles resteront cachées pour alléger la liste et apparaîtront lorsque vous ouvrirez la fiche d’un élève.</p>
+    box.innerHTML=`<b>⭐ Actions fréquentes</b><p class="help-text">Cochez 2 à 6 actions à afficher en priorité pendant le cours.</p>
       <div class="quick-actions-config-grid">${actions.map(a=>`<label class="quick-action-check"><input type="checkbox" value="${this.escapeHtml(a.id)}" ${selected.includes(a.id)?'checked':''}> ${a.type==='reward'?'➕':'➖'} ${this.escapeHtml(a.name)}</label>`).join('')}</div>
       <button class="btn btn-sm btn-primary" style="margin-top:8px" onclick="app.saveQuickActions()">Enregistrer les actions fréquentes</button>`;
   };
@@ -2456,10 +2520,7 @@ class AbsenceApp {
         b.onclick=()=>this.addActivityPenalty(card.dataset.studentId,a.id);
         bar.appendChild(b);
       });
-      // Les actions fréquentes restent cachées avec le reste des détails.
-      // Elles n'apparaissent qu'après un clic sur le nom de l'élève.
-      const details=card.querySelector('.activity-student-details');
-      if(bar.children.length && details) details.prepend(bar);
+      if(bar.children.length) card.prepend(bar);
       // Corrige aussi les boutons d'actions standards pour les récompenses.
       card.querySelectorAll('.activity-action-btn[data-action-id]').forEach(btn=>{
         const a=window.__v47ActionsCache?.find(x=>x.id===btn.dataset.actionId);
@@ -2522,6 +2583,21 @@ class AbsenceApp {
     const now=new Date().toTimeString().slice(0,5);
     const next=courses.find(c=>c.endTime>=now);
     set('dash-next-course',next?`<h4>⏭ Prochain cours</h4><div class="big">${cls(next.classId)}</div><div class="small">${next.startTime}–${next.endTime}</div>`:`<h4>⏭ Prochain cours</h4><div class="small">Aucun autre cours aujourd'hui</div>`);
+  };
+})();
+
+/* =========================
+   v5.0 — Fiabilité, sécurité des données et PWA
+   ========================= */
+(() => {
+  const proto = AbsenceApp.prototype;
+  const _init_v50 = proto.init;
+  proto.init = async function() {
+    await _init_v50.call(this);
+    // Marqueur lisible par l'interface et les sauvegardes.
+    await db.put('settings',{key:'appVersion',value:'5.0.0'});
+    await db.put('settings',{key:'dbSchemaVersion',value:7});
+    this.showSaveIndicator();
   };
 })();
 

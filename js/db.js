@@ -2,7 +2,8 @@
  * Module IndexedDB - AbsenceAppDB
  */
 const DB_NAME = 'AbsenceAppDB';
-const DB_VERSION = 6;
+const DB_VERSION = 7;
+const APP_SCHEMA_VERSION = 7;
 
 class AppDatabase {
   constructor() {
@@ -62,6 +63,30 @@ class AppDatabase {
         }
         if (!db.objectStoreNames.contains('schoolYears')) {
           db.createObjectStore('schoolYears', { keyPath: 'year' });
+        }
+
+        // v5.0 : indexation par année scolaire pour éviter les mélanges
+        // entre années et accélérer les futures requêtes ciblées.
+        const yearStores = ['classes','students','timetable','attendance','calendar','sessions','activityCategories','activityActions','activityEvents'];
+        for (const name of yearStores) {
+          if (!db.objectStoreNames.contains(name)) continue;
+          const store = event.target.transaction.objectStore(name);
+          if (!store.indexNames.contains('schoolYear')) {
+            store.createIndex('schoolYear', 'schoolYear', { unique: false });
+          }
+          // Les anciennes données sont rattachées à l'année active historique.
+          // Elles seront normalisées plus précisément au démarrage.
+          const req = store.openCursor();
+          req.onsuccess = () => {
+            const cursor = req.result;
+            if (!cursor) return;
+            const value = cursor.value;
+            if (!value.schoolYear) {
+              value.schoolYear = '2026/2027';
+              cursor.update(value);
+            }
+            cursor.continue();
+          };
         }
       };
 
@@ -225,9 +250,8 @@ class AppDatabase {
     }
 
     // Marqueur de version de l'application : uniquement initialisé s'il n'existe pas.
-    if (!(await this.get('settings', 'appVersion'))) {
-      await this.put('settings', { key: 'appVersion', value: '4.0.0' });
-    }
+    await this.put('settings', { key: 'appVersion', value: '5.0.0' });
+    await this.put('settings', { key: 'dbSchemaVersion', value: APP_SCHEMA_VERSION });
     if (!(await this.get('settings', 'activeSchoolYear'))) {
       await this.put('settings', { key: 'activeSchoolYear', value: '2026/2027' });
     }
@@ -257,6 +281,39 @@ class AppDatabase {
     if (!(await this.get('settings', 'language'))) {
       await this.put('settings', { key: 'language', value: 'fr' });
     }
+
+    // v5.0 : normalisation des enregistrements existants. On n'écrase jamais
+    // une année déjà renseignée.
+    const activeYear = (await this.get('settings', 'activeSchoolYear'))?.value || '2026/2027';
+    const yearStores = ['classes','students','timetable','attendance','calendar','sessions','activityCategories','activityActions','activityEvents'];
+    for (const storeName of yearStores) {
+      if (!this.db.objectStoreNames.contains(storeName)) continue;
+      const rows = await this.getAll(storeName);
+      const missing = rows.filter(r => !r.schoolYear);
+      for (const row of missing) { row.schoolYear = activeYear; await this.put(storeName, row); }
+    }
+  }
+
+  // Transaction multi-stores : toutes les écritures sont atomiques.
+  async replaceStores(payload) {
+    const stores = Object.keys(payload).filter(name => this.db.objectStoreNames.contains(name));
+    if (!stores.length) return;
+    return new Promise((resolve, reject) => {
+      const tx = this.db.transaction(stores, 'readwrite');
+      tx.oncomplete = () => resolve();
+      tx.onerror = () => reject(tx.error || new Error('Transaction IndexedDB échouée.'));
+      tx.onabort = () => reject(tx.error || new Error('Transaction IndexedDB annulée.'));
+      try {
+        for (const name of stores) {
+          const store = tx.objectStore(name);
+          store.clear();
+          for (const item of (payload[name] || [])) store.put(item);
+        }
+      } catch (e) {
+        try { tx.abort(); } catch (_) {}
+        reject(e);
+      }
+    });
   }
 
   // Méthodes génériques

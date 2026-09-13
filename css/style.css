@@ -787,3 +787,11 @@ button:focus-visible,input:focus-visible,select:focus-visible,textarea:focus-vis
 .custom-remark-editor label{display:block;margin-bottom:6px}
 .custom-remark-editor textarea{width:100%;resize:vertical;min-height:80px}
 .summary-highlight{margin-top:10px;padding:10px;border-radius:8px;background:var(--accent-p-bg,#ecfdf5);border:1px solid var(--border)}
+
+
+/* v5.0 — notifications discrètes et ergonomie iPhone */
+#toast-host{position:fixed;left:50%;bottom:calc(76px + env(safe-area-inset-bottom));transform:translateX(-50%);z-index:10000;display:flex;flex-direction:column;gap:8px;pointer-events:none;width:min(92vw,420px)}
+.app-toast{padding:10px 14px;border-radius:12px;background:var(--card,#fff);color:var(--text,#111);border:1px solid var(--border,#ddd);box-shadow:0 8px 28px rgba(0,0,0,.14);font-size:.92rem;opacity:0;transform:translateY(10px);transition:opacity .18s ease,transform .18s ease;text-align:center}
+.app-toast.show{opacity:1;transform:translateY(0)}
+.app-toast-success{border-left:4px solid #16a34a}.app-toast-warning{border-left:4px solid #d97706}.app-toast-error{border-left:4px solid #dc2626}.app-toast-info{border-left:4px solid #2563eb}
+@media (max-width:700px){#toast-host{bottom:calc(68px + env(safe-area-inset-bottom));width:calc(100vw - 24px)}.app-toast{font-size:.88rem}}
