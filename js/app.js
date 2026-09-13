@@ -2366,7 +2366,7 @@ class AbsenceApp {
     if(el && last && [...el.options].some(o=>o.value===last)) el.value=last;
   };
 
-  // --- Actions fréquentes 4–6 ---
+  // --- Actions fréquentes 2–6 ---
   proto.getQuickActions = async function() {
     const saved=(await db.get('settings','quickActivityActions'))?.value;
     if(Array.isArray(saved) && saved.length) return saved.slice(0,6);
@@ -2375,7 +2375,7 @@ class AbsenceApp {
   };
   proto.saveQuickActions = async function() {
     const ids=[...document.querySelectorAll('#quick-actions-config input[type=checkbox]:checked')].map(x=>x.value).slice(0,6);
-    if(ids.length<4){alert('Choisissez au moins 4 actions fréquentes (et jusqu’à 6).');return;}
+    if(ids.length<2){alert('Choisissez au moins 2 actions fréquentes (et jusqu’à 6).');return;}
     await db.put('settings',{key:'quickActivityActions',value:ids});
     await this.renderActivitySettings();
     await this.renderActivitiesView();
@@ -2388,7 +2388,7 @@ class AbsenceApp {
     const box=document.getElementById('quick-actions-config'); if(!box)return;
     const actions=(await db.getAll('activityActions')).filter(a=>a.active!==false);
     const selected=await this.getQuickActions();
-    box.innerHTML=`<b>⭐ Actions fréquentes</b><p class="help-text">Cochez 4 à 6 actions à afficher en priorité pendant le cours.</p>
+    box.innerHTML=`<b>⭐ Actions fréquentes</b><p class="help-text">Cochez 2 à 6 actions fréquentes. Elles resteront cachées pour alléger la liste et apparaîtront lorsque vous ouvrirez la fiche d’un élève.</p>
       <div class="quick-actions-config-grid">${actions.map(a=>`<label class="quick-action-check"><input type="checkbox" value="${this.escapeHtml(a.id)}" ${selected.includes(a.id)?'checked':''}> ${a.type==='reward'?'➕':'➖'} ${this.escapeHtml(a.name)}</label>`).join('')}</div>
       <button class="btn btn-sm btn-primary" style="margin-top:8px" onclick="app.saveQuickActions()">Enregistrer les actions fréquentes</button>`;
   };
@@ -2456,7 +2456,10 @@ class AbsenceApp {
         b.onclick=()=>this.addActivityPenalty(card.dataset.studentId,a.id);
         bar.appendChild(b);
       });
-      if(bar.children.length) card.prepend(bar);
+      // Les actions fréquentes restent cachées avec le reste des détails.
+      // Elles n'apparaissent qu'après un clic sur le nom de l'élève.
+      const details=card.querySelector('.activity-student-details');
+      if(bar.children.length && details) details.prepend(bar);
       // Corrige aussi les boutons d'actions standards pour les récompenses.
       card.querySelectorAll('.activity-action-btn[data-action-id]').forEach(btn=>{
         const a=window.__v47ActionsCache?.find(x=>x.id===btn.dataset.actionId);
