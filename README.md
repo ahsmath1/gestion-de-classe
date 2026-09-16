@@ -149,3 +149,12 @@ La mise à jour conserve la base IndexedDB existante. Le navigateur effectue aut
 - Les actions restent configurables depuis la fiche individuelle.
 - La rubrique « Pratiques et comportements en mathématiques » reste dans la fiche individuelle et fonctionne avec les activités.
 - L’interface est optimisée pour une utilisation rapide sur iPhone.
+
+
+## v5.3 — progression, rappels et journal de classe
+- Dans « Mes cours du jour », chaque classe affiche son numéro de séance hebdomadaire (S1 à S5 lorsque le créneau est présent dans l'emploi du temps).
+- Affichage de la phase pédagogique selon les dates : Remédiation intensive (14/09/2026–16/10/2026), puis Enseignement explicite à partir du 26/10/2026.
+- Ajout de rappels par classe, visibles dans « Mes cours du jour », avec date d'échéance et possibilité de les terminer.
+- Ajout d'un journal d'événements par classe : date, séance et texte libre.
+- Les rappels et événements sont inclus dans les sauvegardes/restaurations et liés à l'année scolaire.
+- Le sommaire fourni est séparé comme demandé : pages 1–4 = 2AC, pages 5–8 = 3AC. Les intitulés de tâches/consolidations du PDF ne sont pas automatiquement affectés à une séance lorsqu'une durée de tâche n'est pas précisée dans la source.

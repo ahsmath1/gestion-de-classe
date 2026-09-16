@@ -13,6 +13,9 @@ class AbsenceApp {
     this.activityExpandedStudents = new Set(); // élèves dont les détails sont ouverts
     this.language = 'fr';
     this.activeSchoolYear = '2026/2027';
+    this.phase1Start = '2026-09-14';
+    this.phase1End = '2026-10-16';
+    this.phase2Start = '2026-10-26';
     this.changeCounter = 0;
     this.currentStudentDetailId = null;
     this.favoriteClasses = [];
@@ -59,7 +62,8 @@ class AbsenceApp {
       year: this.activeSchoolYear,
       classes: await db.getAll('classes'), students: await db.getAll('students'), timetable: await db.getAll('timetable'),
       attendance: await db.getAll('attendance'), calendar: await db.getAll('calendar'), sessions: await db.getAll('sessions'),
-      activityCategories: await db.getAll('activityCategories'), activityActions: await db.getAll('activityActions'), activityEvents: await db.getAll('activityEvents')
+      activityCategories: await db.getAll('activityCategories'), activityActions: await db.getAll('activityActions'), activityEvents: await db.getAll('activityEvents'),
+      classReminders: await db.getAll('classReminders'), classEvents: await db.getAll('classEvents')
     };
     if (includeSettings) {
       const settings = await db.getAll('settings');
@@ -75,7 +79,7 @@ class AbsenceApp {
   }
 
   async clearYearData() {
-    for (const store of ['classes','students','timetable','attendance','calendar','sessions','activityCategories','activityActions','activityEvents']) {
+    for (const store of ['classes','students','timetable','attendance','calendar','sessions','activityCategories','activityActions','activityEvents','classReminders','classEvents']) {
       if (db.db.objectStoreNames.contains(store)) await db.clearStore(store);
     }
   }
@@ -88,7 +92,7 @@ class AbsenceApp {
       classes:d.classes||[], students:d.students||[], timetable:d.timetable||[],
       attendance:d.attendance||[], calendar:d.calendar||[], sessions:d.sessions||[],
       activityCategories:d.activityCategories||[], activityActions:d.activityActions||[],
-      activityEvents:d.activityEvents||[], settings:d.settings||[]
+      activityEvents:d.activityEvents||[], classReminders:d.classReminders||[], classEvents:d.classEvents||[], settings:d.settings||[]
     });
   }
 
@@ -476,7 +480,7 @@ class AbsenceApp {
       localStorage.setItem(key, JSON.stringify({
         savedAt: new Date().toISOString(),
         reason,
-        appVersion: '5.0.0',
+        appVersion: '5.3.0',
         data
       }));
       return true;
@@ -510,7 +514,7 @@ class AbsenceApp {
         classes:data.classes||[], students:data.students||[], timetable:data.timetable||[],
         attendance:data.attendance||[], calendar:data.calendar||[], sessions:data.sessions||[],
         activityCategories:data.activityCategories||[], activityActions:data.activityActions||[],
-        activityEvents:data.activityEvents||[], settings:data.settings||[]
+        activityEvents:data.activityEvents||[], classReminders:data.classReminders||[], classEvents:data.classEvents||[], settings:data.settings||[]
       });
       location.reload();
     } catch(e){this.showToast('Impossible de restaurer la sauvegarde automatique : '+e.message,'error');}
@@ -616,6 +620,67 @@ class AbsenceApp {
   async checkDayStatus(isoDate) { return this.getDayStatus(isoDate); }
 
   // --- MES COURS DU JOUR VIEW ---
+  getTeachingPhase(isoDate) {
+    if (isoDate >= this.phase1Start && isoDate <= this.phase1End) {
+      return { key:'remediation', label:'Phase 1 — Remédiation intensive' };
+    }
+    if (isoDate >= this.phase2Start) {
+      return { key:'explicit', label:'Phase 2 — Enseignement explicite' };
+    }
+    return { key:'transition', label:'Période intermédiaire' };
+  }
+
+  getWeekMondayISO(isoDate) {
+    const d = new Date(`${isoDate}T12:00:00`);
+    const day = d.getDay();
+    const diff = day === 0 ? -6 : 1 - day;
+    d.setDate(d.getDate() + diff);
+    return d.toISOString().slice(0,10);
+  }
+
+  getWeeklySessionNumber(course, allTimetable) {
+    const sameClass = allTimetable
+      .filter(c => c.classId === course.classId)
+      .sort((a,b) => a.day - b.day || a.startTime.localeCompare(b.startTime));
+    const idx = sameClass.findIndex(c => c.id === course.id);
+    return idx >= 0 ? idx + 1 : null;
+  }
+
+  async getClassReminders(classId, date) {
+    const rows = (await db.getAll('classReminders')).filter(r => r.classId === classId && r.schoolYear === this.activeSchoolYear && !r.completed);
+    return rows.filter(r => !r.dueDate || r.dueDate <= date).sort((a,b) => String(a.dueDate||'').localeCompare(String(b.dueDate||'')));
+  }
+
+  async getClassEvents(classId, date) {
+    return (await db.getAll('classEvents'))
+      .filter(e => e.classId === classId && e.schoolYear === this.activeSchoolYear && e.date <= date)
+      .sort((a,b) => b.date.localeCompare(a.date) || (b.createdAt||0)-(a.createdAt||0));
+  }
+
+  async addClassReminder(classId, date) {
+    const text = prompt(`Rappel pour ${classId} :`, '');
+    if (!text?.trim()) return;
+    const due = prompt('Date du rappel (AAAA-MM-JJ) :', date) || date;
+    if (!/^\d{4}-\d{2}-\d{2}$/.test(due)) { this.showToast('Date invalide.','warning'); return; }
+    await db.put('classReminders', { id:`rem_${Date.now()}_${Math.random().toString(36).slice(2,7)}`, classId, text:text.trim(), dueDate:due, completed:false, schoolYear:this.activeSchoolYear, createdAt:Date.now() });
+    await this.registerChange(); this.showSaveIndicator(); await this.renderTodayCourses();
+  }
+
+  async addClassEvent(classId, date, courseId) {
+    const text = prompt(`Événement pour ${classId} — ${this.formatDateFR(date)} :`, '');
+    if (!text?.trim()) return;
+    const timetable = await db.getAll('timetable');
+    const course = timetable.find(c => c.id === courseId);
+    const sessionNumber = course ? this.getWeeklySessionNumber(course, timetable) : null;
+    await db.put('classEvents', { id:`evt_${Date.now()}_${Math.random().toString(36).slice(2,7)}`, classId, date, courseId:courseId||null, sessionNumber, text:text.trim(), schoolYear:this.activeSchoolYear, createdAt:Date.now() });
+    await this.registerChange(); this.showSaveIndicator(); await this.renderTodayCourses();
+  }
+
+  async completeClassReminder(id) {
+    const r=await db.get('classReminders',id); if(!r)return;
+    r.completed=true; r.completedAt=Date.now(); await db.put('classReminders',r); await this.registerChange(); this.showSaveIndicator(); await this.renderTodayCourses();
+  }
+
   async renderTodayCourses() {
     const list = document.getElementById('today-courses-list'); const banner = document.getElementById('today-banner'); list.innerHTML='';
     const status = await this.getDayStatus(this.selectedDate);
@@ -623,11 +688,24 @@ class AbsenceApp {
     banner.classList.add('hidden');
     const courses = await this.getCoursesForDate(this.selectedDate);
     if (!courses.length) { list.innerHTML='<div class="card"><p style="text-align:center;">Aucun cours dans l’emploi du temps pour ce jour.</p></div>'; return; }
-    const sessions = await db.getAll('sessions');
+    const [sessions,timetable] = await Promise.all([db.getAll('sessions'), db.getAll('timetable')]);
+    const phase=this.getTeachingPhase(this.selectedDate);
     for (const course of courses) {
       const done = sessions.some(x=>x.date===this.selectedDate && x.courseId===course.id && x.completed);
+      const sessionNumber=this.getWeeklySessionNumber(course,timetable);
+      const reminders=await this.getClassReminders(course.classId,this.selectedDate);
+      const events=await this.getClassEvents(course.classId,this.selectedDate);
+      const recentEvents=events.slice(0,2);
       const card=document.createElement('div'); card.className='course-card';
-      card.innerHTML=`<div><div class="course-time">🕒 ${course.startTime} – ${course.endTime}</div><div class="course-class">Classe : ${course.classId}</div></div><div><span class="course-status-pill ${done?'done':'pending'}">${done?'✓ Effectué':'⏳ En attente'}</span></div>`;
+      card.innerHTML=`<div class="course-main-info">
+        <div class="course-time">🕒 ${course.startTime} – ${course.endTime}</div>
+        <div class="course-class"><strong>${this.escapeHtml(course.classId)}</strong>${sessionNumber?` <span class="session-number">· S${sessionNumber}</span>`:''}</div>
+        <div class="course-phase">${phase.label}</div>
+        ${phase.key==='remediation' && sessionNumber ? `<div class="course-sequence">Séance ${sessionNumber} de la semaine</div>`:''}
+        ${reminders.length?`<div class="course-reminders"><b>📌 Rappels</b>${reminders.map(r=>`<div class="class-reminder-line"><span>${this.escapeHtml(r.text)}</span><button class="mini-done" onclick="event.stopPropagation();app.completeClassReminder('${r.id}')" title="Terminer">✓</button></div>`).join('')}</div>`:''}
+        ${recentEvents.length?`<div class="course-events"><b>📝 Derniers événements</b>${recentEvents.map(e=>`<div class="class-event-line"><span>${this.formatDateFR(e.date)}${e.sessionNumber?` · S${e.sessionNumber}`:''} — ${this.escapeHtml(e.text)}</span></div>`).join('')}</div>`:''}
+        <div class="course-tools"><button class="btn btn-sm btn-secondary" onclick="event.stopPropagation();app.addClassReminder('${this.escapeHtml(course.classId)}','${this.selectedDate}')">📌 Rappel</button><button class="btn btn-sm btn-secondary" onclick="event.stopPropagation();app.addClassEvent('${this.escapeHtml(course.classId)}','${this.selectedDate}','${this.escapeHtml(course.id)}')">📝 Événement</button></div>
+      </div><div><span class="course-status-pill ${done?'done':'pending'}">${done?'✓ Effectué':'⏳ En attente'}</span></div>`;
       card.onclick=()=>this.startRollcall(course.id,course.classId,this.selectedDate,course.startTime,course.endTime); list.appendChild(card);
     }
   }
@@ -2167,6 +2245,8 @@ class AbsenceApp {
       activityCategories: await db.getAll('activityCategories'),
       activityActions: await db.getAll('activityActions'),
       activityEvents: await db.getAll('activityEvents'),
+      classReminders: await db.getAll('classReminders'),
+      classEvents: await db.getAll('classEvents'),
       settings: await db.getAll('settings'),
       schoolYears: await db.getAll('schoolYears'),
       schoolYear: this.activeSchoolYear
@@ -2193,6 +2273,8 @@ class AbsenceApp {
       activityCategories: await db.getAll('activityCategories'),
       activityActions: await db.getAll('activityActions'),
       activityEvents: await db.getAll('activityEvents'),
+      classReminders: await db.getAll('classReminders'),
+      classEvents: await db.getAll('classEvents'),
       settings: await db.getAll('settings'),
       schoolYears: await db.getAll('schoolYears'),
       schoolYear: this.activeSchoolYear
@@ -2252,7 +2334,7 @@ class AbsenceApp {
         classes:await db.getAll('classes'), students:await db.getAll('students'), timetable:await db.getAll('timetable'),
         attendance:await db.getAll('attendance'), calendar:await db.getAll('calendar'), sessions:await db.getAll('sessions'),
         activityCategories:await db.getAll('activityCategories'), activityActions:await db.getAll('activityActions'),
-        activityEvents:await db.getAll('activityEvents'), settings:await db.getAll('settings')
+        activityEvents:await db.getAll('activityEvents'), classReminders:await db.getAll('classReminders'), classEvents:await db.getAll('classEvents'), settings:await db.getAll('settings')
       };
 
       const classMap=new Map();
@@ -2592,15 +2674,15 @@ class AbsenceApp {
   proto.init = async function() {
     await _init_v50.call(this);
     // Marqueur lisible par l'interface et les sauvegardes.
-    await db.put('settings',{key:'appVersion',value:'5.1.0'});
-    await db.put('settings',{key:'dbSchemaVersion',value:7});
+    await db.put('settings',{key:'appVersion',value:'5.3.0'});
+    await db.put('settings',{key:'dbSchemaVersion',value:8});
     this.showSaveIndicator();
   };
 })();
 
 
 /* =========================
-   v5.1 — Activités intégrées à la fiche individuelle
+   v5.3 — Activités intégrées à la fiche individuelle
    ========================= */
 (() => {
   const proto = AbsenceApp.prototype;

@@ -863,3 +863,17 @@ button:focus-visible,input:focus-visible,select:focus-visible,textarea:focus-vis
     padding:9px 7px;
   }
 }
+
+/* v5.3 — progression, rappels et journal de classe */
+.course-main-info{min-width:0;flex:1}
+.session-number{font-weight:800;font-size:.95rem}
+.course-phase{font-size:.78rem;margin-top:3px;opacity:.78;font-weight:600}
+.course-sequence{font-size:.75rem;margin-top:2px;opacity:.7}
+.course-reminders,.course-events{margin-top:8px;padding:8px 10px;border:1px solid var(--border);border-radius:8px;background:var(--bg)}
+.course-reminders b,.course-events b{display:block;font-size:.78rem;margin-bottom:4px}
+.class-reminder-line,.class-event-line{display:flex;gap:6px;align-items:center;font-size:.78rem;padding:3px 0}
+.class-reminder-line span,.class-event-line span{flex:1;min-width:0;overflow-wrap:anywhere}
+.mini-done{border:1px solid var(--border);background:var(--card-bg);border-radius:6px;padding:2px 7px;font-weight:700;cursor:pointer}
+.course-tools{display:flex;gap:6px;flex-wrap:wrap;margin-top:8px}
+.course-tools .btn{font-size:.72rem;padding:5px 8px}
+@media(max-width:600px){.course-card{align-items:flex-start}.course-card>div:last-child{margin-left:6px}.course-tools .btn{min-height:34px}.course-reminders,.course-events{font-size:.78rem}}

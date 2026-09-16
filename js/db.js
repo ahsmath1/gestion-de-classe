@@ -2,8 +2,8 @@
  * Module IndexedDB - AbsenceAppDB
  */
 const DB_NAME = 'AbsenceAppDB';
-const DB_VERSION = 7;
-const APP_SCHEMA_VERSION = 7;
+const DB_VERSION = 8;
+const APP_SCHEMA_VERSION = 8;
 
 class AppDatabase {
   constructor() {
@@ -64,10 +64,23 @@ class AppDatabase {
         if (!db.objectStoreNames.contains('schoolYears')) {
           db.createObjectStore('schoolYears', { keyPath: 'year' });
         }
+        // v5.3 : rappels et journal des événements par classe
+        if (!db.objectStoreNames.contains('classReminders')) {
+          const store = db.createObjectStore('classReminders', { keyPath: 'id' });
+          store.createIndex('classId', 'classId', { unique: false });
+          store.createIndex('dueDate', 'dueDate', { unique: false });
+          store.createIndex('schoolYear', 'schoolYear', { unique: false });
+        }
+        if (!db.objectStoreNames.contains('classEvents')) {
+          const store = db.createObjectStore('classEvents', { keyPath: 'id' });
+          store.createIndex('classId', 'classId', { unique: false });
+          store.createIndex('date', 'date', { unique: false });
+          store.createIndex('schoolYear', 'schoolYear', { unique: false });
+        }
 
         // v5.0 : indexation par année scolaire pour éviter les mélanges
         // entre années et accélérer les futures requêtes ciblées.
-        const yearStores = ['classes','students','timetable','attendance','calendar','sessions','activityCategories','activityActions','activityEvents'];
+        const yearStores = ['classes','students','timetable','attendance','calendar','sessions','activityCategories','activityActions','activityEvents','classReminders','classEvents'];
         for (const name of yearStores) {
           if (!db.objectStoreNames.contains(name)) continue;
           const store = event.target.transaction.objectStore(name);
@@ -285,7 +298,7 @@ class AppDatabase {
     // v5.0 : normalisation des enregistrements existants. On n'écrase jamais
     // une année déjà renseignée.
     const activeYear = (await this.get('settings', 'activeSchoolYear'))?.value || '2026/2027';
-    const yearStores = ['classes','students','timetable','attendance','calendar','sessions','activityCategories','activityActions','activityEvents'];
+    const yearStores = ['classes','students','timetable','attendance','calendar','sessions','activityCategories','activityActions','activityEvents','classReminders','classEvents'];
     for (const storeName of yearStores) {
       if (!this.db.objectStoreNames.contains(storeName)) continue;
       const rows = await this.getAll(storeName);
