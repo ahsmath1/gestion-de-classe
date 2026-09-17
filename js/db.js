@@ -2,8 +2,8 @@
  * Module IndexedDB - AbsenceAppDB
  */
 const DB_NAME = 'AbsenceAppDB';
-const DB_VERSION = 8;
-const APP_SCHEMA_VERSION = 8;
+const DB_VERSION = 9;
+const APP_SCHEMA_VERSION = 9;
 
 class AppDatabase {
   constructor() {
@@ -304,6 +304,19 @@ class AppDatabase {
       const rows = await this.getAll(storeName);
       const missing = rows.filter(r => !r.schoolYear);
       for (const row of missing) { row.schoolYear = activeYear; await this.put(storeName, row); }
+    }
+
+    // v5.5 : les anciens événements du journal sont visibles par défaut.
+    // La propriété visible est ajoutée uniquement lorsqu'elle est absente,
+    // afin de ne jamais modifier le choix d'affichage déjà effectué.
+    if (this.db.objectStoreNames.contains('classEvents')) {
+      const classEvents = await this.getAll('classEvents');
+      for (const event of classEvents) {
+        if (typeof event.visible !== 'boolean') {
+          event.visible = true;
+          await this.put('classEvents', event);
+        }
+      }
     }
   }
 

@@ -158,3 +158,14 @@ La mise à jour conserve la base IndexedDB existante. Le navigateur effectue aut
 - Ajout d'un journal d'événements par classe : date, séance et texte libre.
 - Les rappels et événements sont inclus dans les sauvegardes/restaurations et liés à l'année scolaire.
 - Le sommaire fourni est séparé comme demandé : pages 1–4 = 2AC, pages 5–8 = 3AC. Les intitulés de tâches/consolidations du PDF ne sont pas automatiquement affectés à une séance lorsqu'une durée de tâche n'est pas précisée dans la source.
+
+
+## v5.5 — Journal de classe et visibilité des événements
+- Chaque événement du journal possède un état **visible / masqué**.
+- Les événements masqués restent enregistrés et peuvent être réaffichés à tout moment.
+- Filtres **Tous / Visibles / Masqués** et filtre par classe.
+- Suppression définitive séparée de l'action Masquer.
+- Les événements visibles seulement apparaissent dans **Mes cours du jour**.
+- Migration automatique : les anciens événements sans propriété `visible` deviennent visibles.
+- La visibilité est conservée après actualisation, fermeture, sauvegarde/restauration et fusion.
+- Interface compacte et tactile pour une utilisation rapide sur iPhone.

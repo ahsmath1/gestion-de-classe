@@ -213,7 +213,7 @@ class AbsenceApp {
     if (this.currentView === 'view-stats') await this.renderStats();
     if (this.currentView === 'view-history') await this.renderHistory();
     if (this.currentView === 'view-timetable') await this.renderTimetableEditor();
-    if (this.currentView === 'view-calendar') await this.renderCalendarView();
+    if (this.currentView === 'view-calendar') { await this.renderCalendarView(); await this.initClassEventsJournalFilters(); }
     if (this.currentView === 'view-today') await this.renderTodayCourses();
     if (this.currentView === 'view-student-detail' && this.currentStudentDetailId) await this.showStudentDetail(this.currentStudentDetailId);
   }
@@ -419,7 +419,7 @@ class AbsenceApp {
     if (viewId === 'view-stats') this.renderStats();
     if (viewId === 'view-history') this.renderHistory();
     if (viewId === 'view-timetable') this.renderTimetableEditor();
-    if (viewId === 'view-calendar') this.renderCalendarView();
+    if (viewId === 'view-calendar') { this.renderCalendarView(); this.initClassEventsJournalFilters(); }
     if (viewId === 'view-activities') this.renderActivitiesView();
     if (viewId === 'view-student-detail') this.renderStudentActivityDetail(this.activityStudentId);
   }
@@ -480,7 +480,7 @@ class AbsenceApp {
       localStorage.setItem(key, JSON.stringify({
         savedAt: new Date().toISOString(),
         reason,
-        appVersion: '5.3.0',
+        appVersion: '5.5.0',
         data
       }));
       return true;
@@ -653,7 +653,7 @@ class AbsenceApp {
 
   async getClassEvents(classId, date) {
     return (await db.getAll('classEvents'))
-      .filter(e => e.classId === classId && e.schoolYear === this.activeSchoolYear && e.date <= date)
+      .filter(e => e.classId === classId && e.schoolYear === this.activeSchoolYear && e.date <= date && e.visible !== false)
       .sort((a,b) => b.date.localeCompare(a.date) || (b.createdAt||0)-(a.createdAt||0));
   }
 
@@ -672,7 +672,7 @@ class AbsenceApp {
     const timetable = await db.getAll('timetable');
     const course = timetable.find(c => c.id === courseId);
     const sessionNumber = course ? this.getWeeklySessionNumber(course, timetable) : null;
-    await db.put('classEvents', { id:`evt_${Date.now()}_${Math.random().toString(36).slice(2,7)}`, classId, date, courseId:courseId||null, sessionNumber, text:text.trim(), schoolYear:this.activeSchoolYear, createdAt:Date.now() });
+    await db.put('classEvents', { id:`evt_${Date.now()}_${Math.random().toString(36).slice(2,7)}`, classId, date, courseId:courseId||null, sessionNumber, text:text.trim(), visible:true, schoolYear:this.activeSchoolYear, createdAt:Date.now() });
     await this.registerChange(); this.showSaveIndicator(); await this.renderTodayCourses();
   }
 
@@ -689,7 +689,6 @@ class AbsenceApp {
     const courses = await this.getCoursesForDate(this.selectedDate);
     if (!courses.length) { list.innerHTML='<div class="card"><p style="text-align:center;">Aucun cours dans l’emploi du temps pour ce jour.</p></div>'; return; }
     const [sessions,timetable] = await Promise.all([db.getAll('sessions'), db.getAll('timetable')]);
-    const phase=this.getTeachingPhase(this.selectedDate);
     for (const course of courses) {
       const done = sessions.some(x=>x.date===this.selectedDate && x.courseId===course.id && x.completed);
       const sessionNumber=this.getWeeklySessionNumber(course,timetable);
@@ -699,9 +698,7 @@ class AbsenceApp {
       const card=document.createElement('div'); card.className='course-card';
       card.innerHTML=`<div class="course-main-info">
         <div class="course-time">🕒 ${course.startTime} – ${course.endTime}</div>
-        <div class="course-class"><strong>${this.escapeHtml(course.classId)}</strong>${sessionNumber?` <span class="session-number">· S${sessionNumber}</span>`:''}</div>
-        <div class="course-phase">${phase.label}</div>
-        ${phase.key==='remediation' && sessionNumber ? `<div class="course-sequence">Séance ${sessionNumber} de la semaine</div>`:''}
+        <div class="course-class"><strong>${this.escapeHtml(String(course.classId).replace(/^(\d+)AC-(.+)$/,'$1-$2'))}</strong>${sessionNumber?` <span class="session-number">· S${sessionNumber}</span>`:''}</div>
         ${reminders.length?`<div class="course-reminders"><b>📌 Rappels</b>${reminders.map(r=>`<div class="class-reminder-line"><span>${this.escapeHtml(r.text)}</span><button class="mini-done" onclick="event.stopPropagation();app.completeClassReminder('${r.id}')" title="Terminer">✓</button></div>`).join('')}</div>`:''}
         ${recentEvents.length?`<div class="course-events"><b>📝 Derniers événements</b>${recentEvents.map(e=>`<div class="class-event-line"><span>${this.formatDateFR(e.date)}${e.sessionNumber?` · S${e.sessionNumber}`:''} — ${this.escapeHtml(e.text)}</span></div>`).join('')}</div>`:''}
         <div class="course-tools"><button class="btn btn-sm btn-secondary" onclick="event.stopPropagation();app.addClassReminder('${this.escapeHtml(course.classId)}','${this.selectedDate}')">📌 Rappel</button><button class="btn btn-sm btn-secondary" onclick="event.stopPropagation();app.addClassEvent('${this.escapeHtml(course.classId)}','${this.selectedDate}','${this.escapeHtml(course.id)}')">📝 Événement</button></div>
@@ -1832,6 +1829,79 @@ class AbsenceApp {
     }
   }
 
+  // --- JOURNAL DE CLASSE : VISIBILITÉ DES ÉVÉNEMENTS ---
+  setClassEventsFilter(filter) {
+    document.querySelectorAll('[data-event-filter]').forEach(btn => btn.classList.toggle('active', btn.dataset.eventFilter === filter));
+    const el = document.getElementById('class-events-filter');
+    if (el) el.value = filter;
+    this.renderClassEventsJournal();
+  }
+
+  async renderClassEventsJournal() {
+    const container = document.getElementById('class-events-journal-list');
+    const filter = document.getElementById('class-events-filter')?.value || 'all';
+    const classFilter = document.getElementById('class-events-class-filter')?.value || 'all';
+    if (!container) return;
+    const events = (await db.getAll('classEvents'))
+      .filter(e => e.schoolYear === this.activeSchoolYear)
+      .filter(e => classFilter === 'all' || e.classId === classFilter)
+      .filter(e => filter === 'all' || (filter === 'visible' ? e.visible !== false : e.visible === false))
+      .sort((a,b) => b.date.localeCompare(a.date) || (b.createdAt||0)-(a.createdAt||0));
+    const allClasses = await db.getAll('classes');
+    const classMap = new Map(allClasses.map(c => [c.id, c.name || c.id]));
+    if (!events.length) {
+      container.innerHTML = '<div class="card"><p class="help-text" style="text-align:center;">Aucun événement dans ce filtre.</p></div>';
+      return;
+    }
+    container.innerHTML = events.map(e => {
+      const visible = e.visible !== false;
+      return `<div class="journal-event ${visible ? '' : 'is-hidden'}">
+        <div class="journal-event-main">
+          <div class="journal-event-meta"><strong>${this.escapeHtml(String(e.classId).replace(/^(\d+)AC-(.+)$/,'$1-$2'))}</strong> · ${this.formatDateFR(e.date)}${e.sessionNumber ? ` · S${e.sessionNumber}` : ''}${!visible ? ' · <span class="muted">Masqué</span>' : ''}</div>
+          <div class="journal-event-text">${this.escapeHtml(e.text)}</div>
+        </div>
+        <div class="journal-event-actions">
+          <button class="btn btn-sm btn-secondary" onclick="app.toggleClassEventVisibility('${e.id}')" title="${visible ? 'Masquer' : 'Afficher'}">${visible ? '🙈 Masquer' : '👁️ Afficher'}</button>
+          <button class="btn btn-sm btn-danger" onclick="app.deleteClassEvent('${e.id}')" title="Supprimer définitivement">🗑️</button>
+        </div>
+      </div>`;
+    }).join('');
+  }
+
+  async toggleClassEventVisibility(id) {
+    const event = await db.get('classEvents', id);
+    if (!event) return;
+    event.visible = event.visible === false;
+    await db.put('classEvents', event);
+    await this.registerChange();
+    this.showSaveIndicator();
+    this.showToast(event.visible ? 'Événement réaffiché.' : 'Événement masqué.', 'success');
+    await this.renderClassEventsJournal();
+    await this.renderTodayCourses();
+  }
+
+  async deleteClassEvent(id) {
+    const event = await db.get('classEvents', id);
+    if (!event) return;
+    if (!confirm(`Supprimer définitivement cet événement ?\n\n${event.text}`)) return;
+    await db.delete('classEvents', id);
+    await this.registerChange();
+    this.showSaveIndicator();
+    this.showToast('Événement supprimé définitivement.', 'success');
+    await this.renderClassEventsJournal();
+    await this.renderTodayCourses();
+  }
+
+  async initClassEventsJournalFilters() {
+    const select = document.getElementById('class-events-class-filter');
+    if (!select) return;
+    const current = select.value || 'all';
+    const classes = (await db.getAll('classes')).sort((a,b) => String(a.name||a.id).localeCompare(String(b.name||b.id),'fr'));
+    select.innerHTML = '<option value="all">Toutes les classes</option>' + classes.map(c => `<option value="${this.escapeHtml(c.id)}">${this.escapeHtml(String(c.id).replace(/^(\d+)AC-(.+)$/,'$1-$2'))}</option>`).join('');
+    select.value = classes.some(c => c.id === current) ? current : 'all';
+    await this.renderClassEventsJournal();
+  }
+
   // --- CALENDRIER VIEW ---
   async renderCalendarView() {
     const calendar = await db.getAll('calendar');
@@ -2306,7 +2376,9 @@ class AbsenceApp {
         classes:data.classes||[], students:data.students||[], timetable:data.timetable||[],
         attendance:data.attendance||[], calendar:data.calendar||[], sessions:data.sessions||[],
         activityCategories:data.activityCategories||[], activityActions:data.activityActions||[],
-        activityEvents:data.activityEvents||[], settings:data.settings||[]
+        activityEvents:data.activityEvents||[], classReminders:data.classReminders||[],
+        classEvents:(data.classEvents||[]).map(e=>({ ...e, schoolYear:e.schoolYear||data.schoolYear||this.activeSchoolYear, visible:e.visible !== false })),
+        settings:data.settings||[]
       };
       // Un ancien export v4.x peut ne pas contenir schoolYears : dans ce cas,
       // on conserve les archives locales au lieu de les effacer.
@@ -2387,6 +2459,15 @@ class AbsenceApp {
       for(const s of (incoming.sessions||[])){
         const x={...s,classId:s.classId?(classMap.get(s.classId)||s.classId):s.classId}; const key=sessionKey(x);
         if(!sessionKeys.has(key)){await db.put('sessions',x);sessionKeys.add(key);}
+      }
+
+      // Journal de classe : les événements gardent leur ID pour éviter les doublons.
+      // Un ancien export sans 'visible' est considéré comme visible.
+      const existingClassEventIds=new Set(current.classEvents.map(e=>e.id));
+      for(const e of (incoming.classEvents||[])){
+        if(existingClassEventIds.has(e.id)) continue;
+        const x={...e, classId:classMap.get(e.classId)||e.classId, schoolYear:e.schoolYear||this.activeSchoolYear, visible:e.visible !== false};
+        await db.put('classEvents',x); existingClassEventIds.add(x.id);
       }
 
       // Activités : les événements gardent leur ID d'origine. Cela permet de réimporter
@@ -2674,7 +2755,7 @@ class AbsenceApp {
   proto.init = async function() {
     await _init_v50.call(this);
     // Marqueur lisible par l'interface et les sauvegardes.
-    await db.put('settings',{key:'appVersion',value:'5.3.0'});
+    await db.put('settings',{key:'appVersion',value:'5.5.0'});
     await db.put('settings',{key:'dbSchemaVersion',value:8});
     this.showSaveIndicator();
   };

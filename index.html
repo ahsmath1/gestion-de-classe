@@ -277,6 +277,27 @@
 <button class="btn btn-primary" data-i18n="addHoliday" onclick="app.openModal('modal-holiday')">+ Ajouter Vacances / Férié / Exception</button>
 </div>
 <div class="calendar-events-list" id="calendar-events-list"></div>
+
+<div class="card class-events-journal-card" style="margin-top:16px;">
+  <div class="journal-head">
+    <div>
+      <h3>📝 Journal de classe</h3>
+      <p class="help-text">Les événements masqués restent enregistrés. Vous pouvez les réafficher ou les supprimer définitivement.</p>
+    </div>
+  </div>
+  <select id="class-events-filter" style="display:none"><option value="all">Tous</option><option value="visible">Visibles</option><option value="hidden">Masqués</option></select>
+  <div class="journal-filters">
+    <select class="form-control" id="class-events-class-filter" onchange="app.renderClassEventsJournal()" aria-label="Filtrer par classe">
+      <option value="all">Toutes les classes</option>
+    </select>
+    <div class="segmented-control" role="group" aria-label="Filtrer les événements">
+      <button class="filter-chip active" data-event-filter="all" onclick="app.setClassEventsFilter('all')">Tous</button>
+      <button class="filter-chip" data-event-filter="visible" onclick="app.setClassEventsFilter('visible')">Visibles</button>
+      <button class="filter-chip" data-event-filter="hidden" onclick="app.setClassEventsFilter('hidden')">Masqués</button>
+    </div>
+  </div>
+  <div class="class-events-journal-list" id="class-events-journal-list"></div>
+</div>
 </section>
 <!-- VIEW 10: SAUVEGARDE ET EXPORT -->
 <section class="view" id="view-backup">

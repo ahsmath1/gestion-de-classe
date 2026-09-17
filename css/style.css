@@ -877,3 +877,18 @@ button:focus-visible,input:focus-visible,select:focus-visible,textarea:focus-vis
 .course-tools{display:flex;gap:6px;flex-wrap:wrap;margin-top:8px}
 .course-tools .btn{font-size:.72rem;padding:5px 8px}
 @media(max-width:600px){.course-card{align-items:flex-start}.course-card>div:last-child{margin-left:6px}.course-tools .btn{min-height:34px}.course-reminders,.course-events{font-size:.78rem}}
+
+/* v5.5 — Journal de classe : affichage/masquage rapide */
+.journal-filters{display:flex;gap:8px;align-items:center;flex-wrap:wrap;margin:10px 0 12px}
+.journal-filters .form-control{flex:1;min-width:150px}
+.segmented-control{display:flex;gap:4px;flex-wrap:wrap}
+.filter-chip{border:1px solid var(--border);background:var(--bg);color:var(--text);border-radius:999px;padding:8px 12px;min-height:38px;cursor:pointer}
+.filter-chip.active{font-weight:700;box-shadow:0 0 0 1px currentColor inset}
+.class-events-journal-list{display:flex;flex-direction:column;gap:8px}
+.journal-event{display:flex;justify-content:space-between;gap:10px;align-items:center;border:1px solid var(--border);border-radius:10px;padding:10px;background:var(--bg)}
+.journal-event.is-hidden{opacity:.72}
+.journal-event-meta{font-size:.78rem;margin-bottom:3px}
+.journal-event-text{font-size:.92rem;line-height:1.35}
+.journal-event-actions{display:flex;gap:5px;flex-shrink:0}
+.muted{opacity:.7}
+@media(max-width:600px){.journal-filters{display:block}.journal-filters .form-control{width:100%;margin-bottom:7px}.segmented-control{width:100%}.filter-chip{flex:1}.journal-event{align-items:flex-start}.journal-event-actions{flex-direction:column}.journal-event-actions .btn{min-height:38px;padding-inline:9px}}
