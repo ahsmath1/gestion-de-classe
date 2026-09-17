@@ -892,3 +892,9 @@ button:focus-visible,input:focus-visible,select:focus-visible,textarea:focus-vis
 .journal-event-actions{display:flex;gap:5px;flex-shrink:0}
 .muted{opacity:.7}
 @media(max-width:600px){.journal-filters{display:block}.journal-filters .form-control{width:100%;margin-bottom:7px}.segmented-control{width:100%}.filter-chip{flex:1}.journal-event{align-items:flex-start}.journal-event-actions{flex-direction:column}.journal-event-actions .btn{min-height:38px;padding-inline:9px}}
+
+/* v5.6 — Gestion des événements directement depuis Mes cours du jour */
+.class-event-line{display:flex;align-items:center;gap:6px}
+.mini-event-action{border:1px solid var(--border);background:var(--card-bg);border-radius:7px;min-width:34px;min-height:32px;padding:3px 6px;cursor:pointer;flex-shrink:0}
+.event-journal-link{margin-top:7px;min-height:36px}
+@media(max-width:600px){.mini-event-action{min-width:38px;min-height:38px;font-size:1rem}.event-journal-link{width:100%;min-height:40px}}
