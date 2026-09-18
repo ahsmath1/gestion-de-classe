@@ -269,16 +269,49 @@ class AbsenceApp {
     const name = document.getElementById('profile-teacher-name').value.trim();
     const subject = document.getElementById('profile-subject').value.trim() || 'Mathématiques';
     const language = document.getElementById('profile-language').value || 'fr';
+    const uiScale = document.getElementById('profile-ui-scale')?.value || 'normal';
+    const autoBackupInterval = Number(document.getElementById('profile-auto-backup')?.value || 0);
+    const previousAutoBackupInterval = Number((await db.get('settings','autoBackupInterval'))?.value || 0);
+
+    // Enregistrer TOUS les paramètres du profil, y compris les préférences d'interface
+    // et de sauvegarde automatique. (Ils étaient lus dans openProfile() mais jamais
+    // enregistrés par saveProfile(), ce qui donnait l'impression que le bouton
+    // « Enregistrer » ne faisait rien.)
     await db.put('settings', { key: 'teacherName', value: name });
     await db.put('settings', { key: 'teacherSubject', value: subject });
     await db.put('settings', { key: 'language', value: language });
+    await db.put('settings', { key: 'uiScale', value: uiScale });
+    await db.put('settings', { key: 'autoBackupInterval', value: autoBackupInterval });
     await db.put('settings', { key: 'profileConfigured', value: true });
+
+    // Appliquer immédiatement la nouvelle taille des boutons, sans attendre un
+    // redémarrage de l'application.
+    await this.applyUserInterfacePreferences();
+
+    // Si la sauvegarde automatique vient d'être activée ou modifiée, repartir
+    // avec un compteur propre. Cela évite un déclenchement imprévisible.
+    if (autoBackupInterval !== previousAutoBackupInterval) this.changeCounter = 0;
+
+    // À la première activation, créer aussi un premier point de restauration
+    // local immédiatement : l'option est donc réellement active dès maintenant.
+    if (autoBackupInterval > 0 && previousAutoBackupInterval === 0) {
+      try {
+        const data = await this.getBackupData();
+        localStorage.setItem(`gestion_classe_autobackup_${this.activeSchoolYear}`, JSON.stringify({
+          savedAt: new Date().toISOString(), data
+        }));
+      } catch (e) {
+        console.warn('Initialisation de la sauvegarde automatique impossible', e);
+      }
+    }
+
     this.language = language;
     this.applyLanguage();
     this.closeModal('modal-profile');
     await this.renderProfile();
     await this.renderDashboard();
     this.showSaveIndicator();
+    this.showToast(this.language === 'ar' ? 'تم حفظ إعدادات الملف الشخصي.' : 'Profil et préférences enregistrés.', 'success');
   }
 
   escapeHtml(value) {
