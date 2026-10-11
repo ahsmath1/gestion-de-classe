@@ -169,3 +169,25 @@ La mise à jour conserve la base IndexedDB existante. Le navigateur effectue aut
 - Migration automatique : les anciens événements sans propriété `visible` deviennent visibles.
 - La visibilité est conservée après actualisation, fermeture, sauvegarde/restauration et fusion.
 - Interface compacte et tactile pour une utilisation rapide sur iPhone.
+
+
+## Version 5.8 — ordre des élèves et rapports sans phrases vides
+
+- Ajout de commandes ↑ / ↓ dans la liste des élèves pour modifier l'ordre d'affichage par classe. L'ordre est enregistré dans `importOrder` et conservé lors du rechargement.
+- Le déplacement agit sur la liste complète de la classe, même lorsqu'une recherche filtre temporairement les élèves affichés.
+- Dans le rapport individuel, la rubrique « Pratiques et comportements en mathématiques » est omise lorsqu'aucun comportement n'est coché.
+- La rubrique « Remarques générales » est omise lorsqu'aucune remarque automatique n'est générée. Les phrases « Aucune difficulté de comportement n'a été signalée » et « Aucune remarque particulière à signaler » ne sont plus imprimées.
+- Version de l'application et cache PWA mis à jour en 5.8.0.
+
+
+## Version 6.0 — Fiabilité et sauvegardes
+- Le compteur de modifications pour la sauvegarde automatique est conservé après rechargement.
+- Les sauvegardes automatiques et exports indiquent la version de l'application et la date d'export.
+- Contrôle de structure du fichier JSON avant restauration ou fusion, afin de refuser les fichiers manifestement incomplets ou mal formés.
+- La restauration locale rétablit aussi les archives d'années scolaires lorsqu'elles sont présentes et normalise la visibilité des événements.
+- Affectation libre des élèves à un groupe de remédiation depuis leur fiche, affichage du groupe dans la liste et filtre par groupe ou élèves non affectés.
+- Ajustements de taille minimale des commandes tactiles sur téléphone.
+- Version du cache hors ligne mise à jour pour déclencher le renouvellement des fichiers de l'application.
+- Les fonctions déjà présentes en v5.8 (ordre des élèves et rapports sans remarques fictives) sont conservées.
+
+**Important :** la sauvegarde automatique reste stockée dans le navigateur et sur le même appareil. Elle ne remplace pas un export JSON régulier vers un autre support. La v6.0 a passé des contrôles de syntaxe et d'intégrité de l'archive ; elle n'a pas encore fait l'objet d'un test complet dans un navigateur réel.

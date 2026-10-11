@@ -772,8 +772,6 @@ button:focus-visible,input:focus-visible,select:focus-visible,textarea:focus-vis
 .activity-action-btn.reward-action{border-color:#10b981!important}
 .activity-action-btn.reward-action b{color:#059669!important}
 @media(max-width:600px){
- .rollcall-quick-actions{display:grid;grid-template-columns:1fr 1fr;gap:8px}
- .rollcall-quick-actions .btn{width:100%;min-width:0;white-space:normal}
  .dashboard-overview-grid{grid-template-columns:repeat(2,1fr)}
  .rollcall-quick-actions .btn{flex:1;min-height:42px}
  .student-row{min-height:54px}
@@ -900,3 +898,23 @@ button:focus-visible,input:focus-visible,select:focus-visible,textarea:focus-vis
 .mini-event-action{border:1px solid var(--border);background:var(--card-bg);border-radius:7px;min-width:34px;min-height:32px;padding:3px 6px;cursor:pointer;flex-shrink:0}
 .event-journal-link{margin-top:7px;min-height:36px}
 @media(max-width:600px){.mini-event-action{min-width:38px;min-height:38px;font-size:1rem}.event-journal-link{width:100%;min-height:40px}}
+
+
+/* v5.8 — commandes de réorganisation des élèves, adaptées au tactile */
+.student-row-actions { display:flex; align-items:center; justify-content:flex-end; gap:5px; flex-wrap:wrap; }
+.student-row-actions .btn { min-width:36px; min-height:36px; touch-action:manipulation; }
+.student-row-actions .btn:disabled { opacity:.35; cursor:not-allowed; }
+@media (max-width: 600px) {
+  .student-row-actions { width:100%; justify-content:flex-start; margin-top:8px; }
+  .student-row-actions .btn { min-height:40px; }
+}
+
+
+/* v6.0 — affectation aux groupes de remédiation et ergonomie tactile */
+#select-remediation-group-filter{min-height:44px}
+#student-remediation-group{min-height:44px}
+@media(max-width:700px){
+  #select-remediation-group-filter,#student-remediation-group{font-size:16px}
+  #student-detail-card .btn{min-height:44px}
+  .student-row-actions .btn{min-width:40px;min-height:40px}
+}

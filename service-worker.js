@@ -1,4 +1,4 @@
-const CACHE_NAME = 'gestion-classe-v5.7.1';
+const CACHE_NAME = 'gestion-classe-v6.0.0';
 const ASSETS = [
   './', './index.html', './manifest.json', './css/style.css',
   './js/db.js', './js/app.js', './icons/icon-192.png', './icons/icon-512.png'

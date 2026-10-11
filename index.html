@@ -128,7 +128,6 @@
 </div>
 <div class="rollcall-quick-actions">
 <button class="btn btn-sm btn-success" id="btn-all-present">✓ Tous présents</button>
-<button class="btn btn-sm btn-secondary" id="btn-bulk-activity">⭐ Action collective</button>
 <button class="btn btn-sm btn-secondary" id="btn-intensive-mode">⚡ Cours intensif</button>
 </div>
 <p class="swipe-help">📱 Glisser un élève <b>←</b> = A · <b>→</b> = R</p>
@@ -165,6 +164,14 @@
 </div>
 <div class="search-box">
 <input data-i18n-placeholder="searchStudentByName" id="search-student-global" oninput="app.renderStudentsList()" placeholder="🔎 Rechercher un élève par nom..." type="text"/>
+</div>
+<div class="form-group" style="margin-top:8px;">
+<label for="select-remediation-group-filter">Groupe de remédiation :</label>
+<select class="form-control" id="select-remediation-group-filter" onchange="app.renderStudentsList()">
+<option value="">Tous les groupes</option>
+<option value="__unassigned__">Élèves non affectés</option>
+</select>
+<small class="help-text">Affectez un groupe depuis la fiche individuelle de chaque élève, puis filtrez la liste pour préparer les activités ciblées.</small>
 </div>
 <div class="manage-list" id="students-manage-list"></div>
 </section>
@@ -592,22 +599,6 @@
 <div class="modal-actions"><button class="btn btn-secondary" data-i18n="close" onclick="app.closeModal('modal-activity-history')">Fermer</button></div>
 </div>
 </div>
-<!-- Modal Action collective pendant l'appel -->
-<div class="modal" id="modal-bulk-activity">
-<div class="modal-content">
-<h3>⭐ Action collective</h3>
-<p class="help-text">Appliquer une pénalité ou une récompense en un seul clic à tous les élèves <b>présents lors de cet appel</b>. Les élèves marqués A ou R ne sont pas concernés.</p>
-<div class="form-group">
-<label for="bulk-activity-action"><b>Action à appliquer :</b></label>
-<select class="form-control" id="bulk-activity-action"></select>
-</div>
-<div id="bulk-activity-count" class="help-text"></div>
-<div class="modal-actions">
-<button class="btn btn-secondary" onclick="app.closeModal('modal-bulk-activity')">Annuler</button>
-<button class="btn btn-primary" onclick="app.applyBulkActivityAction()">✓ Appliquer à tous les présents</button>
-</div>
-</div>
-</div>
 <!-- Modal Récapitulatif Appel Terminé -->
 <div class="modal" id="modal-summary">
 <div class="modal-content">
@@ -622,6 +613,6 @@
 </div>
 </div>
 <script src="js/db.js"></script>
-<script src="js/app.js?v=5.7.1"></script>
+<script src="js/app.js"></script>
 </body>
 </html>

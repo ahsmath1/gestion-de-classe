@@ -17,6 +17,7 @@ class AbsenceApp {
     this.phase1End = '2026-10-16';
     this.phase2Start = '2026-10-26';
     this.changeCounter = 0;
+    this.lastAutoBackupAt = null;
     this.currentStudentDetailId = null;
     this.favoriteClasses = [];
   }
@@ -24,6 +25,7 @@ class AbsenceApp {
   async init() {
     await db.init();
     await this.loadActiveSchoolYear();
+    this.changeCounter = Number((await db.get('settings', `autoBackupChangeCounter_${this.activeSchoolYear}`))?.value || 0);
     await this.loadLanguage();
     await this.loadFavorites();
     await this.applyUserInterfacePreferences();
@@ -270,8 +272,10 @@ class AbsenceApp {
     const subject = document.getElementById('profile-subject').value.trim() || 'Mathématiques';
     const language = document.getElementById('profile-language').value || 'fr';
     const uiScale = document.getElementById('profile-ui-scale')?.value || 'normal';
-    const autoBackupInterval = Number(document.getElementById('profile-auto-backup')?.value || 0);
-    const previousAutoBackupInterval = Number((await db.get('settings','autoBackupInterval'))?.value || 0);
+    const backupChoice = document.getElementById('profile-auto-backup')?.value || 'off';
+    const autoBackupInterval = backupChoice === 'off' ? 0 : Number(backupChoice);
+    const previousBackupChoice = (await db.get('settings','autoBackupInterval'))?.value ?? 0;
+    const previousAutoBackupInterval = previousBackupChoice === 'off' ? 0 : Number(previousBackupChoice || 0);
 
     // Enregistrer TOUS les paramètres du profil, y compris les préférences d'interface
     // et de sauvegarde automatique. (Ils étaient lus dans openProfile() mais jamais
@@ -290,7 +294,10 @@ class AbsenceApp {
 
     // Si la sauvegarde automatique vient d'être activée ou modifiée, repartir
     // avec un compteur propre. Cela évite un déclenchement imprévisible.
-    if (autoBackupInterval !== previousAutoBackupInterval) this.changeCounter = 0;
+    if (autoBackupInterval !== previousAutoBackupInterval) {
+      this.changeCounter = 0;
+      await db.put('settings', { key: `autoBackupChangeCounter_${this.activeSchoolYear}`, value: 0 });
+    }
 
     // À la première activation, créer aussi un premier point de restauration
     // local immédiatement : l'option est donc réellement active dès maintenant.
@@ -513,7 +520,7 @@ class AbsenceApp {
       localStorage.setItem(key, JSON.stringify({
         savedAt: new Date().toISOString(),
         reason,
-        appVersion: '5.5.0',
+        appVersion: '6.0.0',
         data
       }));
       return true;
@@ -524,15 +531,47 @@ class AbsenceApp {
   }
 
   async registerChange() {
+    // Le compteur est conservé dans IndexedDB : un rechargement de la page
+    // ne remet plus à zéro la fréquence de sauvegarde automatique.
     this.changeCounter++;
+    await db.put('settings', { key: `autoBackupChangeCounter_${this.activeSchoolYear}`, value: this.changeCounter });
     const interval = Number((await db.get('settings','autoBackupInterval'))?.value || 0);
     if (interval > 0 && this.changeCounter % interval === 0) {
       try {
         const data = await this.getBackupData();
-        localStorage.setItem(`gestion_classe_autobackup_${this.activeSchoolYear}`, JSON.stringify({savedAt:new Date().toISOString(),data}));
+        const savedAt = new Date().toISOString();
+        localStorage.setItem(`gestion_classe_autobackup_${this.activeSchoolYear}`, JSON.stringify({savedAt,reason:'automatique',appVersion:'6.0.0',data}));
+        this.lastAutoBackupAt = savedAt;
         this.showSaveIndicator();
-      } catch(e) { console.warn('Auto-backup impossible',e); }
+      } catch(e) {
+        console.warn('Auto-backup impossible',e);
+        this.showToast('La sauvegarde automatique locale a échoué. Exportez une sauvegarde JSON sur un autre support.','warning',5000);
+      }
     }
+  }
+
+  validateBackupData(data) {
+    if (!data || typeof data !== 'object' || Array.isArray(data)) throw new Error('Le fichier ne contient pas une sauvegarde valide.');
+    const required = ['classes','students','timetable','attendance','calendar'];
+    for (const name of required) {
+      if (!Array.isArray(data[name])) throw new Error(`Sauvegarde invalide : la rubrique « ${name} » est absente ou incorrecte.`);
+    }
+    const optional = ['sessions','activityCategories','activityActions','activityEvents','classReminders','classEvents','settings','schoolYears'];
+    for (const name of optional) {
+      if (data[name] !== undefined && !Array.isArray(data[name])) throw new Error(`Sauvegarde invalide : la rubrique « ${name} » doit être une liste.`);
+    }
+    for (const [index, row] of data.classes.entries()) {
+      if (!row || typeof row !== 'object' || row.id == null || row.name == null) throw new Error(`Sauvegarde invalide : classe n° ${index + 1} incomplète.`);
+    }
+    for (const [index, row] of data.students.entries()) {
+      if (!row || typeof row !== 'object' || row.id == null || row.classId == null) throw new Error(`Sauvegarde invalide : élève n° ${index + 1} sans identifiant ou sans classe.`);
+    }
+    for (const name of ['timetable','attendance','calendar']) {
+      for (const [index, row] of data[name].entries()) {
+        if (!row || typeof row !== 'object' || row.id == null) throw new Error(`Sauvegarde invalide : élément n° ${index + 1} de « ${name} » sans identifiant.`);
+      }
+    }
+    return true;
   }
 
   async restoreLocalAutoBackup() {
@@ -540,14 +579,17 @@ class AbsenceApp {
     if(!raw){this.showToast('Aucune sauvegarde automatique locale disponible.','warning');return;}
     try {
       const pack=JSON.parse(raw);
+      const data=pack.data || {};
+      this.validateBackupData(data);
       if(!confirm(`Restaurer la sauvegarde automatique du ${new Date(pack.savedAt).toLocaleString()} ?\n\nUne sauvegarde de sécurité de l'état actuel sera créée avant la restauration.`))return;
       await this.createLocalSafetyBackup('avant restauration automatique');
-      const data=pack.data || {};
       await db.replaceStores({
-        classes:data.classes||[], students:data.students||[], timetable:data.timetable||[],
-        attendance:data.attendance||[], calendar:data.calendar||[], sessions:data.sessions||[],
+        classes:data.classes, students:data.students, timetable:data.timetable,
+        attendance:data.attendance, calendar:data.calendar, sessions:data.sessions||[],
         activityCategories:data.activityCategories||[], activityActions:data.activityActions||[],
-        activityEvents:data.activityEvents||[], classReminders:data.classReminders||[], classEvents:data.classEvents||[], settings:data.settings||[]
+        activityEvents:data.activityEvents||[], classReminders:data.classReminders||[],
+        classEvents:(data.classEvents||[]).map(e=>({...e,schoolYear:e.schoolYear||data.schoolYear||this.activeSchoolYear,visible:e.visible!==false})),
+        settings:data.settings||[], ...(Array.isArray(data.schoolYears)?{schoolYears:data.schoolYears}:{})
       });
       location.reload();
     } catch(e){this.showToast('Impossible de restaurer la sauvegarde automatique : '+e.message,'error');}
@@ -926,8 +968,8 @@ class AbsenceApp {
 
     const pCount = total - (aCount + rCount);
 
-    await this.registerChange();
     await db.put('sessions', { id:`session_${this.activeCourse.date}_${this.activeCourse.courseId}`, date:this.activeCourse.date, courseId:this.activeCourse.courseId, classId:this.activeCourse.classId, startTime:this.activeCourse.startTime, endTime:this.activeCourse.endTime, completed:true, updatedAt:Date.now() });
+    await this.registerChange();
     this.showSaveIndicator();
     const summaryCard = document.getElementById('summary-details-card');
     summaryCard.innerHTML = `
@@ -972,11 +1014,19 @@ class AbsenceApp {
     const globalSearch = document.getElementById('search-student-global').value.toLowerCase();
 
     const allStudents = await db.getAll('students');
-    let filtered = allStudents.filter(s => s.classId === selectedClassId && !s.archived);
-
-    if (globalSearch) {
-      filtered = filtered.filter(s => `${s.nom} ${s.prenom}`.toLowerCase().includes(globalSearch));
+    const classActiveStudents = allStudents.filter(s => s.classId === selectedClassId && !s.archived);
+    const groupFilter = document.getElementById('select-remediation-group-filter');
+    if (groupFilter) {
+      const previousGroup = groupFilter.value;
+      const groups = [...new Set(classActiveStudents.map(s => String(s.remediationGroup || '').trim()).filter(Boolean))].sort((a,b)=>a.localeCompare(b,'fr',{sensitivity:'base'}));
+      groupFilter.innerHTML = `<option value="">Tous les groupes</option><option value="__unassigned__">Élèves non affectés</option>${groups.map(g=>`<option value="${this.escapeHtml(g)}">${this.escapeHtml(g)}</option>`).join('')}`;
+      if ([...groupFilter.options].some(o => o.value === previousGroup)) groupFilter.value = previousGroup;
     }
+    let filtered = classActiveStudents;
+    const selectedGroup = groupFilter?.value || '';
+    if (selectedGroup === '__unassigned__') filtered = filtered.filter(s => !String(s.remediationGroup || '').trim());
+    else if (selectedGroup) filtered = filtered.filter(s => String(s.remediationGroup || '').trim() === selectedGroup);
+    if (globalSearch) filtered = filtered.filter(s => `${s.nom} ${s.prenom}`.toLowerCase().includes(globalSearch));
 
     this.sortStudentsInDisplayOrder(filtered);
 
@@ -988,21 +1038,47 @@ class AbsenceApp {
       return;
     }
 
+    const classOrder = this.sortStudentsInDisplayOrder(allStudents.filter(s => s.classId === selectedClassId && !s.archived));
     filtered.forEach((student, idx) => {
       const item = document.createElement('div');
       item.className = 'manage-item';
+      const orderIndex = classOrder.findIndex(s => s.id === student.id);
       item.innerHTML = `
         <div>
-          <strong>${idx + 1}. ${student.nom} ${student.prenom}</strong>
+          <strong>${idx + 1}. ${this.escapeHtml(student.nom)} ${this.escapeHtml(student.prenom)}</strong>
+          <small style="display:block;color:var(--text-muted, #777)">Position dans la classe : ${orderIndex + 1}/${classOrder.length}</small>
+          <small style="display:block;color:var(--text-muted, #777)">${student.remediationGroup ? `Groupe : ${this.escapeHtml(student.remediationGroup)}` : 'Groupe : non affecté'}</small>
         </div>
-        <div>
-          <button class="btn btn-sm btn-secondary" onclick="app.showStudentDetail('${student.id}')">👁 Fiche</button>
-          <button class="btn btn-sm btn-secondary" onclick="app.editStudent('${student.id}')">✏️</button>
-          <button class="btn btn-sm btn-danger" onclick="app.deleteStudent('${student.id}')">🗑</button>
+        <div class="student-row-actions">
+          <button class="btn btn-sm btn-secondary" title="Monter l'élève" aria-label="Monter ${this.escapeHtml(student.nom)}" ${orderIndex<=0?'disabled':''} onclick="app.moveStudent('${this.escapeHtml(student.id)}',-1)">↑</button>
+          <button class="btn btn-sm btn-secondary" title="Descendre l'élève" aria-label="Descendre ${this.escapeHtml(student.nom)}" ${orderIndex>=classOrder.length-1?'disabled':''} onclick="app.moveStudent('${this.escapeHtml(student.id)}',1)">↓</button>
+          <button class="btn btn-sm btn-secondary" onclick="app.showStudentDetail('${this.escapeHtml(student.id)}')">👁 Fiche</button>
+          <button class="btn btn-sm btn-secondary" onclick="app.editStudent('${this.escapeHtml(student.id)}')">✏️</button>
+          <button class="btn btn-sm btn-danger" onclick="app.deleteStudent('${this.escapeHtml(student.id)}')">🗑</button>
         </div>
       `;
       container.appendChild(item);
     });
+  }
+
+  async moveStudent(studentId, direction) {
+    const student = await db.get('students', studentId);
+    if (!student || student.archived) return;
+    const allStudents = await db.getAll('students');
+    const classStudents = this.sortStudentsInDisplayOrder(allStudents.filter(s => s.classId === student.classId && !s.archived));
+    const from = classStudents.findIndex(s => s.id === studentId);
+    const to = from + Number(direction);
+    if (from < 0 || to < 0 || to >= classStudents.length) return;
+    [classStudents[from], classStudents[to]] = [classStudents[to], classStudents[from]];
+    // Normaliser les positions pour que l'ordre soit stable après redémarrage,
+    // importation et sauvegarde/restauration.
+    for (let i = 0; i < classStudents.length; i++) {
+      classStudents[i].importOrder = i + 1;
+      await db.put('students', classStudents[i]);
+    }
+    await this.registerChange();
+    await this.renderStudentsList();
+    this.showSaveIndicator();
   }
 
   async openModal(modalId, preserveCourse = false) {
@@ -1226,6 +1302,12 @@ class AbsenceApp {
         <div class="stat-card"><div class="stat-number" style="color:var(--accent-a);">${aCount}</div><div>Absences</div></div>
         <div class="stat-card"><div class="stat-number" style="color:var(--accent-r);">${rCount}</div><div>Retards</div></div>
         <div class="stat-card"><div class="stat-number">${aCount + rCount}</div><div>Total</div></div>
+      </div>
+      <div class="form-group" style="margin-top:14px;">
+        <label for="student-remediation-group">Groupe de remédiation</label>
+        <input class="form-control" id="student-remediation-group" maxlength="80" value="${this.escapeHtml(student.remediationGroup || '')}" placeholder="Ex. Groupe A — fractions, Groupe B — calcul..." />
+        <small class="help-text">Le nom est libre : vous pouvez organiser les élèves par besoin d’apprentissage, compétence ou priorité.</small>
+        <button class="btn btn-primary" style="margin-top:8px;min-height:40px;" onclick="app.saveStudentRemediationGroup('${this.escapeHtml(student.id)}')">💾 Enregistrer le groupe</button>
       </div>
     `;
 
@@ -1483,6 +1565,17 @@ class AbsenceApp {
     }).join('');
   }
 
+  async saveStudentRemediationGroup(studentId) {
+    const student = await db.get('students', studentId);
+    if (!student) return;
+    student.remediationGroup = document.getElementById('student-remediation-group')?.value.trim() || '';
+    await db.put('students', student);
+    await this.registerChange();
+    this.showSaveIndicator();
+    this.showToast(student.remediationGroup ? `Groupe « ${student.remediationGroup} » enregistré.` : 'Affectation au groupe supprimée.', 'success');
+    await this.renderStudentsList();
+  }
+
   async saveStudentBehaviors() {
     if (!this.currentStudentDetailId) return; const st = await db.get('students', this.currentStudentDetailId); if (!st) return;
     const checks = this.normalizeBehaviorChecks(st.pratiquesComportements);
@@ -1605,7 +1698,7 @@ class AbsenceApp {
     for (const d of this.getBehaviorDomains()) { if ((checks[d.id]||[]).length > 0 && domainTemplates[d.id]) domainClauses.push(ar ? domainTemplates[d.id].ar : domainTemplates[d.id].fr); }
     if (domainClauses.length) phrases.push(ar ? `على مستوى السلوك، على التلميذ ${this.joinList(domainClauses, ar)}.` : `Sur le plan du comportement, l'élève doit ${this.joinList(domainClauses, ar)}.`);
 
-    if (!phrases.length) return ar ? 'لا توجد ملاحظة خاصة تستدعي الإشارة.' : 'Aucune remarque particulière à signaler.';
+    if (!phrases.length) return '';
     return phrases.join(' ');
   }
 
@@ -1638,6 +1731,9 @@ class AbsenceApp {
       const a = actions.find(x => x.id === e.actionId);
       return `<tr><td>${esc(this.formatDateFR(e.date))}</td><td>${esc(c?.name || 'Catégorie supprimée')}</td><td>${esc(a?.name || 'Action supprimée')}</td><td>${e.type==='reward'||Number(e.penalty)<0?'+':'−'}${Math.abs(Number(e.penalty||0)).toFixed(2)}</td></tr>`;
     }).join('') : '<tr><td colspan="4">Aucune pénalité enregistrée.</td></tr>';
+    const behaviorReport = this.buildBehaviorsReportHtml(st, esc);
+    const generalRemark = this.buildGeneralRemark(st, ev).trim();
+    const practicesReport = this.buildPracticesReportHtml(st.pratiquesAttitudes, esc);
     this.openPrintReport(`Rapport — ${st.nom} ${st.prenom}`, `
       <h1>${esc(st.nom)} ${esc(st.prenom)}</h1>
       <p><b>Classe :</b> ${esc(st.classId)} — <b>Année :</b> ${esc(this.activeSchoolYear)}</p>
@@ -1647,11 +1743,10 @@ class AbsenceApp {
       <h2>Comportement détaillé</h2>
       <p>Note actuelle : <b>${score.toFixed(2)} / ${maxScore}</b> — Ajustement net : <b>${deducted>0?'−':'+'}${Math.abs(deducted).toFixed(2)} point(s)</b></p>
       <table border="1" cellspacing="0" cellpadding="7" width="100%"><thead><tr><th>Date</th><th>Catégorie</th><th>Pénalité</th><th>Points</th></tr></thead><tbody>${eventRows}</tbody></table>
-      ${this.buildBehaviorsReportHtml(st, esc)}
-      <h2>Remarques générales</h2>
-      <p>${esc(this.buildGeneralRemark(st, ev))}</p>
-      ${st.customRemark ? `<div style="margin-top:12px;padding:12px;border-left:4px solid #888;background:#f7f7f7"><b>✍️ Remarque personnalisée :</b><p style="margin:6px 0 0">${esc(st.customRemark)}</p></div>` : ''}
-      ${this.buildPracticesReportHtml(st.pratiquesAttitudes, esc)}
+      ${behaviorReport}
+      ${generalRemark ? `<h2>Remarques générales</h2><p>${esc(generalRemark)}</p>` : ''}
+      ${st.customRemark && String(st.customRemark).trim() ? `<div style="margin-top:12px;padding:12px;border-left:4px solid #888;background:#f7f7f7"><b>✍️ Remarque personnalisée :</b><p style="margin:6px 0 0">${esc(st.customRemark)}</p></div>` : ''}
+      ${practicesReport}
     `);
   }
 
@@ -1665,7 +1760,8 @@ class AbsenceApp {
       const items = sel.map(i => d.items[i]).filter(Boolean).map(it => `<li>${esc(ar ? it.ar : it.fr)}</li>`).join('');
       return `<div style="margin-bottom:12px;padding:8px 10px;border:1px solid #ddd;border-radius:8px"><h3 style="margin:0 0 6px">${esc(ar ? d.nameAr : d.name)}</h3><ul>${items}</ul></div>`;
     }).filter(Boolean);
-    const body = domains.length ? domains.join('') : `<p>${ar ? 'لم يتم تسجيل أي صعوبة سلوكية.' : "Aucune difficulté de comportement n'a été signalée."}</p>`;
+    if (!domains.length) return '';
+    const body = domains.join('');
     return `<h2>${ar ? 'الممارسات والسلوكات في الرياضيات' : 'Pratiques et comportements en mathématiques'}</h2>${body}`;
   }
 
@@ -2352,7 +2448,9 @@ class AbsenceApp {
       classEvents: await db.getAll('classEvents'),
       settings: await db.getAll('settings'),
       schoolYears: await db.getAll('schoolYears'),
-      schoolYear: this.activeSchoolYear
+      schoolYear: this.activeSchoolYear,
+      appVersion: '6.0.0',
+      exportedAt: new Date().toISOString()
     };
 
     const jsonStr = JSON.stringify(data, null, 2);
@@ -2380,7 +2478,9 @@ class AbsenceApp {
       classEvents: await db.getAll('classEvents'),
       settings: await db.getAll('settings'),
       schoolYears: await db.getAll('schoolYears'),
-      schoolYear: this.activeSchoolYear
+      schoolYear: this.activeSchoolYear,
+      appVersion: '6.0.0',
+      exportedAt: new Date().toISOString()
     };
     return data;
   }
@@ -2401,8 +2501,8 @@ class AbsenceApp {
     const input=document.getElementById('import-json-file'); if(!input.files.length){this.showToast('Veuillez choisir un fichier JSON.','warning');return;}
     try {
       const data=JSON.parse(await input.files[0].text());
+      this.validateBackupData(data);
       if(data.schoolYear && data.schoolYear !== this.activeSchoolYear && !confirm(`Cette sauvegarde concerne ${data.schoolYear}, alors que l’année active est ${this.activeSchoolYear}.\n\nContinuer la restauration ?`)) return;
-      if(!data.classes||!data.students||!data.timetable||!data.attendance||!data.calendar)throw new Error('Structure de sauvegarde incomplète.');
       if(!confirm('La restauration remplacera les données actuelles. Une sauvegarde locale de sécurité sera créée avant toute modification. Continuer ?'))return;
       await this.createLocalSafetyBackup('avant restauration JSON');
       const payload = {
@@ -2427,8 +2527,8 @@ class AbsenceApp {
     if(!input.files.length){alert('Veuillez choisir un fichier JSON à fusionner.');return;}
     try {
       const incoming=JSON.parse(await input.files[0].text());
+      this.validateBackupData(incoming);
       if(incoming.schoolYear && incoming.schoolYear !== this.activeSchoolYear) { alert(`Impossible de fusionner : la sauvegarde concerne ${incoming.schoolYear}, tandis que le PC est sur ${this.activeSchoolYear}.\n\nChangez d’abord d’année scolaire ou utilisez une restauration.`); return; }
-      if(!incoming.classes||!incoming.students||!incoming.timetable||!incoming.attendance||!incoming.calendar) throw new Error('Structure de sauvegarde incomplète.');
       if(!confirm('FUSION SÉCURISÉE\n\nLes anciennes données du PC seront conservées. Les nouvelles données seront ajoutées et les doublons ignorés.\n\nUne sauvegarde automatique des données actuelles du PC sera téléchargée avant la fusion. Continuer ?')) return;
 
       // 1) Sauvegarde de sécurité AVANT toute modification.
@@ -2788,7 +2888,7 @@ class AbsenceApp {
   proto.init = async function() {
     await _init_v50.call(this);
     // Marqueur lisible par l'interface et les sauvegardes.
-    await db.put('settings',{key:'appVersion',value:'5.5.0'});
+    await db.put('settings',{key:'appVersion',value:'6.0.0'});
     await db.put('settings',{key:'dbSchemaVersion',value:8});
     this.showSaveIndicator();
   };
@@ -2832,145 +2932,6 @@ class AbsenceApp {
       await this.renderStudentActivityManager(this.currentStudentDetailId);
     }
   };
-})();
-
-
-(() => {
-  const proto = AbsenceApp.prototype;
-  // --- Action collective pendant l'appel : pénalité/récompense pour tous les présents ---
-  proto.openBulkActivityModal = async function() {
-    if (!this.activeCourse || !this.rollcallState) {
-      alert('Aucun appel n’est actuellement ouvert.');
-      return;
-    }
-    const presentCount = Object.values(this.rollcallState).filter(s => s === null).length;
-    const countEl = document.getElementById('bulk-activity-count');
-    if (countEl) countEl.innerHTML = `👥 <b>${presentCount}</b> élève${presentCount > 1 ? 's' : ''} présent${presentCount > 1 ? 's' : ''} seront concernés.`;
-    const select = document.getElementById('bulk-activity-action');
-    if (!select) return;
-
-    const {categories, actions} = await this.getActivityConfig();
-    const activeCategories = categories.filter(c => c.active !== false);
-    const activeActions = actions
-      .filter(a => a.active !== false)
-      .sort((a,b) => {
-        const ca = activeCategories.find(c => c.id === a.categoryId);
-        const cb = activeCategories.find(c => c.id === b.categoryId);
-        return String(ca?.name || '').localeCompare(String(cb?.name || ''), 'fr') ||
-               String(a.name || '').localeCompare(String(b.name || ''), 'fr');
-      });
-
-    if (!activeActions.length) {
-      alert('Aucune action n’est configurée. Ajoutez d’abord une pénalité ou une récompense dans « Configurer les activités ».');
-      return;
-    }
-
-    select.innerHTML = activeActions.map(a => {
-      const cat = activeCategories.find(c => c.id === a.categoryId);
-      const reward = a.type === 'reward';
-      const sign = reward ? '+' : '−';
-      const icon = reward ? '➕' : '➖';
-      return `<option value="${this.escapeHtml(a.id)}">${icon} ${this.escapeHtml(cat?.name || 'Sans catégorie')} — ${this.escapeHtml(a.name)} (${sign}${Number(a.penalty || 0).toFixed(2)})</option>`;
-    }).join('');
-
-    this.openModal('modal-bulk-activity');
-  };
-
-  proto.applyBulkActivityAction = async function() {
-    if (!this.activeCourse || !this.rollcallState) return;
-    const actionId = document.getElementById('bulk-activity-action')?.value;
-    const action = actionId ? await db.get('activityActions', actionId) : null;
-    if (!action || action.active === false) {
-      alert('Action introuvable ou inactive.');
-      return;
-    }
-
-    const presentIds = Object.entries(this.rollcallState)
-      .filter(([, status]) => status === null)
-      .map(([studentId]) => studentId);
-
-    if (!presentIds.length) {
-      alert('Aucun élève présent à l’appel.');
-      return;
-    }
-
-    const categories = await db.getAll('activityCategories');
-    const category = categories.find(c => c.id === action.categoryId);
-    const maxScore = Number((await db.get('settings','activityMaxScore'))?.value || 20);
-    const allEvents = await db.getAll('activityEvents');
-    const today = this.activeCourse.date;
-    const isReward = action.type === 'reward';
-    const amount = Number(action.penalty || 0);
-
-    if (!Number.isFinite(amount) || amount <= 0) {
-      alert('Le nombre de points de l’action est invalide.');
-      return;
-    }
-
-    const label = `${isReward ? '+' : '−'}${amount.toFixed(2)} ${action.name}`;
-    if (!confirm(`Appliquer « ${label} » à ${presentIds.length} élève${presentIds.length > 1 ? 's' : ''} présent${presentIds.length > 1 ? 's' : ''} ?`)) return;
-
-    let applied = 0, skipped = 0;
-    for (const studentId of presentIds) {
-      const events = allEvents.filter(e => e.studentId === studentId && !e.archivedAt);
-      const adjustment = events.reduce((sum,e) => sum + Number(e.penalty || 0), 0);
-      const currentScore = Math.max(0, Math.min(maxScore, maxScore - adjustment));
-
-      if (isReward) {
-        if (currentScore >= maxScore - 1e-9) { skipped++; continue; }
-        const rewardAmount = Math.min(amount, maxScore - currentScore);
-        await db.put('activityEvents', {
-          id:`acte_${Date.now()}_${Math.random().toString(36).slice(2,8)}`,
-          studentId,
-          categoryId:action.categoryId,
-          actionId:action.id,
-          penalty:-rewardAmount,
-          date:today,
-          createdAt:new Date().toISOString(),
-          type:'reward'
-        });
-        applied++;
-      } else {
-        const categoryEvents = events.filter(e => e.categoryId === action.categoryId);
-        const categoryAdjustment = categoryEvents.reduce((sum,e) => sum + Number(e.penalty || 0), 0);
-        const remaining = Math.max(0, Number(category?.maxPoints || 0) - categoryAdjustment);
-        if (remaining <= 1e-9 || amount > remaining + 1e-9 || currentScore <= 0) {
-          skipped++;
-          continue;
-        }
-        const penaltyAmount = Math.min(amount, remaining, currentScore);
-        await db.put('activityEvents', {
-          id:`acte_${Date.now()}_${Math.random().toString(36).slice(2,8)}`,
-          studentId,
-          categoryId:action.categoryId,
-          actionId:action.id,
-          penalty:penaltyAmount,
-          date:today,
-          createdAt:new Date().toISOString(),
-          type:'penalty'
-        });
-        applied++;
-      }
-    }
-
-    await this.registerChange();
-    this.closeModal('modal-bulk-activity');
-    this.showSaveIndicator();
-    await this.renderDashboard();
-    if (typeof this.renderActivitiesView === 'function') await this.renderActivitiesView();
-
-    const message = isReward
-      ? `Récompense appliquée à ${applied} élève${applied > 1 ? 's' : ''}${skipped ? ` · ${skipped} non appliqué${skipped > 1 ? 's' : ''} (note déjà au maximum)` : ''}.`
-      : `Pénalité appliquée à ${applied} élève${applied > 1 ? 's' : ''}${skipped ? ` · ${skipped} non appliquée${skipped > 1 ? 's' : ''} (budget de catégorie ou note atteint)` : ''}.`;
-    alert(message);
-  };
-
-  const _init_bulk_activity = proto.init;
-  proto.init = async function() {
-    await _init_bulk_activity.call(this);
-    document.getElementById('btn-bulk-activity')?.addEventListener('click', () => this.openBulkActivityModal());
-  };
-
 })();
 
 const app = new AbsenceApp();
