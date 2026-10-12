@@ -1,4 +1,4 @@
-const CACHE_NAME = 'gestion-classe-v6.0.1';
+const CACHE_NAME = 'gestion-classe-v6.0.1-fix1';
 const ASSETS = [
   './', './index.html', './manifest.json', './css/style.css',
   './js/db.js', './js/app.js', './icons/icon-192.png', './icons/icon-512.png'
@@ -7,7 +7,7 @@ const ASSETS = [
 self.addEventListener('install', event => {
   event.waitUntil(
     caches.open(CACHE_NAME)
-      .then(cache => cache.addAll(ASSETS))
+      .then(cache => cache.addAll(ASSETS.map(url => new Request(url, { cache: 'reload' }))))
       .then(() => self.skipWaiting())
   );
 });

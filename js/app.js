@@ -2935,6 +2935,7 @@ class AbsenceApp {
 })();
 
 (() => {
+  const proto = AbsenceApp.prototype;
   // --- Action collective pendant l'appel : pénalité/récompense pour tous les présents ---
   proto.openBulkActivityModal = async function() {
     if (!this.activeCourse || !this.rollcallState) {
