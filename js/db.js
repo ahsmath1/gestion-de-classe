@@ -127,21 +127,22 @@ class AppDatabase {
 
     // Emploi du temps de référence fourni par l'enseignant.
     const defaultTimetable = [
-      { id: 'c_lun_1', day: 1, startTime: '08:30', endTime: '09:30', classId: '3AC-13' },
-      { id: 'c_lun_2', day: 1, startTime: '09:30', endTime: '10:30', classId: '3AC-12' },
-      { id: 'c_lun_3', day: 1, startTime: '10:30', endTime: '11:30', classId: '2AC-12' },
-      { id: 'c_lun_4', day: 1, startTime: '11:30', endTime: '12:30', classId: '3AC-14' },
-      { id: 'c_mar_1', day: 2, startTime: '14:30', endTime: '15:30', classId: '3AC-12' },
-      { id: 'c_mar_2', day: 2, startTime: '15:30', endTime: '16:30', classId: '2AC-12' },
-      { id: 'c_mar_3', day: 2, startTime: '16:30', endTime: '17:30', classId: '3AC-13' },
-      { id: 'c_mar_4', day: 2, startTime: '17:30', endTime: '18:30', classId: '3AC-14' },
-      { id: 'c_mer_1', day: 3, startTime: '15:30', endTime: '16:30', classId: '3AC-13' },
-      { id: 'c_mer_2', day: 3, startTime: '16:30', endTime: '17:30', classId: '3AC-12' },
-      { id: 'c_jeu_1', day: 4, startTime: '10:30', endTime: '11:30', classId: '3AC-13' },
-      { id: 'c_jeu_2', day: 4, startTime: '11:30', endTime: '12:30', classId: '2AC-12' },
-      { id: 'c_ven_1', day: 5, startTime: '14:30', endTime: '16:30', classId: '3AC-14' },
-      { id: 'c_ven_2', day: 5, startTime: '16:30', endTime: '17:30', classId: '2AC-12' },
-      { id: 'c_ven_3', day: 5, startTime: '17:30', endTime: '18:30', classId: '3AC-12' },
+      { id: 'c_lun_1', day: 1, startTime: '08:00', endTime: '09:00', classId: '3AC-13' },
+      { id: 'c_lun_2', day: 1, startTime: '09:00', endTime: '10:00', classId: '3AC-12' },
+      { id: 'c_lun_3', day: 1, startTime: '10:00', endTime: '11:00', classId: '2AC-12' },
+      { id: 'c_lun_4', day: 1, startTime: '11:00', endTime: '12:00', classId: '3AC-14' },
+      { id: 'c_mar_1', day: 2, startTime: '14:00', endTime: '15:00', classId: '3AC-12' },
+      { id: 'c_mar_2', day: 2, startTime: '15:00', endTime: '16:00', classId: '2AC-12' },
+      { id: 'c_mar_3', day: 2, startTime: '16:00', endTime: '17:00', classId: '3AC-13' },
+      { id: 'c_mar_4', day: 2, startTime: '17:00', endTime: '18:00', classId: '3AC-14' },
+      { id: 'c_mer_1', day: 3, startTime: '14:00', endTime: '15:00', classId: '3AC-13' },
+      { id: 'c_mer_2', day: 3, startTime: '15:00', endTime: '16:00', classId: '3AC-12' },
+      { id: 'c_jeu_1', day: 4, startTime: '10:00', endTime: '11:00', classId: '3AC-13' },
+      { id: 'c_jeu_2', day: 4, startTime: '11:00', endTime: '12:00', classId: '2AC-12' },
+      { id: 'c_ven_1', day: 5, startTime: '14:00', endTime: '15:00', classId: '3AC-14' },
+      { id: 'c_ven_1b', day: 5, startTime: '15:00', endTime: '16:00', classId: '3AC-14' },
+      { id: 'c_ven_2', day: 5, startTime: '16:00', endTime: '17:00', classId: '2AC-12' },
+      { id: 'c_ven_3', day: 5, startTime: '17:00', endTime: '18:00', classId: '3AC-12' },
       { id: 'c_sam_1', day: 6, startTime: '08:30', endTime: '09:30', classId: '2AC-12' },
       { id: 'c_sam_2', day: 6, startTime: '09:30', endTime: '10:30', classId: '3AC-12' },
       { id: 'c_sam_3', day: 6, startTime: '10:30', endTime: '11:30', classId: '3AC-13' },
@@ -153,6 +154,40 @@ class AppDatabase {
     for (const course of defaultTimetable) {
       if (!(await this.get('timetable', course.id))) await this.put('timetable', course);
     }
+    // Migration ciblée v6.0.1 : corriger uniquement les anciens créneaux de référence
+    // encore inchangés. Les créneaux personnalisés par l'enseignant sont préservés.
+    if (!(await this.get('settings', 'timetableReferenceMigration_v6_0_1'))) {
+      const legacy = {
+        c_lun_1:['08:30','09:30','3AC-13'], c_lun_2:['09:30','10:30','3AC-12'],
+        c_lun_3:['10:30','11:30','2AC-12'], c_lun_4:['11:30','12:30','3AC-14'],
+        c_mar_1:['14:30','15:30','3AC-12'], c_mar_2:['15:30','16:30','2AC-12'],
+        c_mar_3:['16:30','17:30','3AC-13'], c_mar_4:['17:30','18:30','3AC-14'],
+        c_mer_1:['15:30','16:30','3AC-13'], c_mer_2:['16:30','17:30','3AC-12'],
+        c_jeu_1:['10:30','11:30','3AC-13'], c_jeu_2:['11:30','12:30','2AC-12'],
+        c_ven_1:['14:30','16:30','3AC-14'], c_ven_2:['16:30','17:30','2AC-12'],
+        c_ven_3:['17:30','18:30','3AC-12']
+      };
+      for (const [id, old] of Object.entries(legacy)) {
+        const current = await this.get('timetable', id);
+        if (!current || current.startTime !== old[0] || current.endTime !== old[1] || current.classId !== old[2]) continue;
+        const target = defaultTimetable.find(c => c.id === id);
+        if (target) await this.put('timetable', target);
+      }
+      const oldFriday = await this.get('timetable', 'c_ven_1');
+      if (oldFriday && oldFriday.startTime === '14:00' && oldFriday.endTime === '15:00' && oldFriday.classId === '3AC-14') {
+        const second = defaultTimetable.find(c => c.id === 'c_ven_1b');
+        if (second && !(await this.get('timetable', second.id))) await this.put('timetable', second);
+      }
+      // Ne crée le nouveau créneau vendredi que si l'ancien créneau de 2h a bien été reconnu.
+      const originalFriday = await this.get('timetable', 'c_ven_1');
+      const fridaySplit = await this.get('timetable', 'c_ven_1b');
+      if (originalFriday && originalFriday.startTime === '14:00' && originalFriday.endTime === '15:00' && originalFriday.classId === '3AC-14' && !fridaySplit) {
+        const second = defaultTimetable.find(c => c.id === 'c_ven_1b');
+        if (second) await this.put('timetable', second);
+      }
+      await this.put('settings', { key:'timetableReferenceMigration_v6_0_1', value:true });
+    }
+
 
     // Calendrier de référence 2026/2027. Les fêtes religieuses dont la date
     // grégorienne dépend de l'observation lunaire sont indiquées comme

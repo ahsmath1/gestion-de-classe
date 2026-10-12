@@ -191,3 +191,12 @@ La mise à jour conserve la base IndexedDB existante. Le navigateur effectue aut
 - Les fonctions déjà présentes en v5.8 (ordre des élèves et rapports sans remarques fictives) sont conservées.
 
 **Important :** la sauvegarde automatique reste stockée dans le navigateur et sur le même appareil. Elle ne remplace pas un export JSON régulier vers un autre support. La v6.0 a passé des contrôles de syntaxe et d'intégrité de l'archive ; elle n'a pas encore fait l'objet d'un test complet dans un navigateur réel.
+
+
+## Version 6.0.1 — correction ciblée
+- Restauration de « Action collective » depuis la base v5.7 corrigée, avec exclusion des élèves marqués A ou R.
+- Rétablissement de la disposition tactile de cette action sur iPhone.
+- Mise à jour des horaires de référence selon le dernier emploi du temps communiqué.
+- Le vendredi 14h–16h est divisé en deux créneaux d'une heure pour 3AC-14.
+- Migration prudente : seuls les anciens créneaux de référence exactement reconnus sont modifiés ; les horaires personnalisés sont laissés intacts.
+- Le cache PWA est versionné en 6.0.1.
