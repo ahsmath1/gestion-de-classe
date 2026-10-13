@@ -1,0 +1,17 @@
+import fs from 'node:fs';
+import path from 'node:path';
+import { fileURLToPath } from 'node:url';
+const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
+const expected = JSON.parse(fs.readFileSync(path.join(root, 'tests', 'expected-methods.json'), 'utf8'));
+globalThis.window = globalThis;
+globalThis.document = { addEventListener(type, fn) { if (type === 'DOMContentLoaded') globalThis.__v7Init = fn; } };
+await import('../js/app.js');
+const app = globalThis.app;
+if (!app) throw new Error('window.app non initialisé');
+const missing = expected.filter(name => typeof app[name] !== 'function');
+if (missing.length) throw new Error('Méthodes absentes : ' + missing.join(', '));
+if (app.getTodayISO().length !== 10) throw new Error('getTodayISO ne renvoie pas une date ISO.');
+if (typeof app.setAllPresent !== 'function') throw new Error('Action collective manquante.');
+if (typeof app.applyBulkActivityAction !== 'function') throw new Error('Action collective des activités manquante.');
+if (globalThis.__v7Init == null) throw new Error('Le démarrage DOMContentLoaded n’est pas enregistré.');
+console.log(`Smoke test réussi : ${expected.length} méthodes historiques chargées, action collective présente.`);

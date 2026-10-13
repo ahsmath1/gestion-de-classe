@@ -1,0 +1,150 @@
+{
+  "project": "Gestion de classe V7 modulaire",
+  "files": [
+    {
+      "path": "README-V7.md",
+      "size": 3365,
+      "sha256": "6628a762699828cd11033d857022f121d2c6323825a052621b9b364fa3a4d269"
+    },
+    {
+      "path": "css/style.css",
+      "size": 35236,
+      "sha256": "b78f9a958c8eb54bface63e436fda8854d7bafadaecfad314f7e3947b4cbcbb8"
+    },
+    {
+      "path": "icons/icon-192.png",
+      "size": 1056,
+      "sha256": "8dfd603f0da070e053988d2621785a58ca00505ebd3947a62b8fa90a9024a42d"
+    },
+    {
+      "path": "icons/icon-512.png",
+      "size": 3154,
+      "sha256": "d7b991bf0f649f21f05627bf121fd934e4c75ebdafe582c1160b9e34ed65dbee"
+    },
+    {
+      "path": "index.html",
+      "size": 34460,
+      "sha256": "6320090f1f7c6b91d5e588caa09f8fcedf663d84c77c9a63902487c867bf44bb"
+    },
+    {
+      "path": "js/app.js",
+      "size": 909,
+      "sha256": "a74ea24bf75dcdb8b36164177711ef670e8dc220d90f4ccb385c299ec92d83f5"
+    },
+    {
+      "path": "js/core/AbsenceApp.js",
+      "size": 9825,
+      "sha256": "4167df22ab9edbb6064cd61339d4f30c00de42c32976ab21810b7c5791499554"
+    },
+    {
+      "path": "js/core/database.js",
+      "size": 24177,
+      "sha256": "2113cc345e8ab2fbab1ec81450d9ef7d2ed4b66384c9bca55e55f1c691f87afa"
+    },
+    {
+      "path": "js/extensions/collective-activity.js",
+      "size": 6254,
+      "sha256": "d17a430da723913873f930a172f7f8d853b074cfdd78ed97508c433bb302a7ea"
+    },
+    {
+      "path": "js/extensions/v47-enhancements.js",
+      "size": 10542,
+      "sha256": "0099e188901eb062519f97866a1f96fb665cbf9400f85dc64cc27ef27d7b6562"
+    },
+    {
+      "path": "js/extensions/v50-initialization.js",
+      "size": 547,
+      "sha256": "0257de3acd59c926d6b8a3d94214ae807cf397757777231f73a60f9dd781dafb"
+    },
+    {
+      "path": "js/extensions/v51-activity-settings.js",
+      "size": 1616,
+      "sha256": "e51cd48a9ffb5584cd02e90c86756586c66c41ffb0117a3f357865d071aef39c"
+    },
+    {
+      "path": "js/modules/activities.js",
+      "size": 25618,
+      "sha256": "2c02265d987d20e59dd20ac8b727a218049f05e18dfbb731464787028af0741e"
+    },
+    {
+      "path": "js/modules/attendance-schedule.js",
+      "size": 18021,
+      "sha256": "83003e9542a2a00f5e67b78715ab5ba2bedcc2b658aeef91e0359c3241d0817d"
+    },
+    {
+      "path": "js/modules/calendar-journal.js",
+      "size": 6297,
+      "sha256": "34969d187c6f629a550836e4600fb6c053e604a0e05e69f1e2894dfc66b9ef37"
+    },
+    {
+      "path": "js/modules/dashboard-search.js",
+      "size": 7553,
+      "sha256": "3d097c693c8066ae56c368d7eed30be853bf251c2ff3afbafc4710006cc4bfde"
+    },
+    {
+      "path": "js/modules/data-backup.js",
+      "size": 22684,
+      "sha256": "cade86cbf9879ee1399da5af249e326cdeb39eea3410de85b2513b7d11ff93ab"
+    },
+    {
+      "path": "js/modules/lifecycle-profile.js",
+      "size": 16213,
+      "sha256": "6c32a1bc11d6a1434325d45cf9fa51bb3ae4c0ca533be59657bd20847f58626c"
+    },
+    {
+      "path": "js/modules/pedagogical-followup.js",
+      "size": 30353,
+      "sha256": "3d2be707894e834c3f16e985a28b88f1872a401e57ef56dade9357747f3b87ce"
+    },
+    {
+      "path": "js/modules/statistics-history.js",
+      "size": 6534,
+      "sha256": "8fbc4386a70eec2a2e38dc09536df9054cb778754cd0cbb9ce3937f97fc46c5f"
+    },
+    {
+      "path": "js/modules/students-classes.js",
+      "size": 23808,
+      "sha256": "4101017b04339c6331e555a91d37cd29fed2c74d6b2a71d1982177d4094fea1a"
+    },
+    {
+      "path": "js/modules/ui-navigation.js",
+      "size": 8730,
+      "sha256": "80b2b4f3eacd73c03c7ced61c49f4d141365f3e92e92d42a5c0ac0baf3dd467c"
+    },
+    {
+      "path": "manifest.json",
+      "size": 656,
+      "sha256": "9f8330b184f7eaaacfc72be913046567233d443d4e34d1daf0784c2c51b36c93"
+    },
+    {
+      "path": "package.json",
+      "size": 400,
+      "sha256": "455e5b1df296a1b7437cb411098bc4841a7be09a543437789b3227183fd4ede4"
+    },
+    {
+      "path": "service-worker.js",
+      "size": 2233,
+      "sha256": "76dbc97cc610bed93d67f673fbb004ee1dc103f21bd3b61a373bb71bf3e5a398"
+    },
+    {
+      "path": "start.bat",
+      "size": 335,
+      "sha256": "3b7aef1f8e95c608ede327ea8f066df0ba92e692554fdf900b7c4ea5204e5181"
+    },
+    {
+      "path": "tests/check-modules.js",
+      "size": 829,
+      "sha256": "1528fb3d5215b34cd6823b1d95b07038f9c141defeff51394b7ecdb93d0f63f6"
+    },
+    {
+      "path": "tests/expected-methods.json",
+      "size": 3502,
+      "sha256": "050a0ba96335d7d8feae0c74e9ca922b68fa71a5ea0dd1011c763d876ab40453"
+    },
+    {
+      "path": "tests/smoke-modules.js",
+      "size": 1241,
+      "sha256": "65993405fcc574180d9344c6ef7ca6166743705dc0077ac6ea27f8943941b47c"
+    }
+  ]
+}

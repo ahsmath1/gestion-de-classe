@@ -1,0 +1,12 @@
+{
+  "name": "gestion-de-classe-v7-modulaire",
+  "version": "7.0.0",
+  "private": true,
+  "type": "module",
+  "description": "Application locale de gestion de classe, architecture modulaire V7",
+  "scripts": {
+    "check:syntax": "node --experimental-vm-modules tests/check-modules.js",
+    "check:smoke": "node tests/smoke-modules.js",
+    "test": "npm run check:syntax && npm run check:smoke"
+  }
+}
