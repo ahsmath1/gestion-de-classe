@@ -263,7 +263,6 @@ const methods = {
   async deleteClass(classId) {
       if (confirm(`Supprimer la classe ${classId} ?`)) {
         await db.delete('classes', classId);
-        this.favoriteClasses=this.favoriteClasses.filter(id=>id!==classId); await this.saveFavorites();
         await this.refreshClassSelectors();
         await this.renderClassesManageList();
         const activeView = document.querySelector('.view.active')?.id;

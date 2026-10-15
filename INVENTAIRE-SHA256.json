@@ -3,13 +3,13 @@
   "files": [
     {
       "path": "README-V7.md",
-      "size": 3365,
-      "sha256": "6628a762699828cd11033d857022f121d2c6323825a052621b9b364fa3a4d269"
+      "size": 3713,
+      "sha256": "606c265fd7ea39032ca120ba5ee41b93d65432039df96a35a91bdc6b5a23992b"
     },
     {
       "path": "css/style.css",
-      "size": 35236,
-      "sha256": "b78f9a958c8eb54bface63e436fda8854d7bafadaecfad314f7e3947b4cbcbb8"
+      "size": 34721,
+      "sha256": "5abaecf2f0c2fedbaa47c8cde63f47a9357eb08e659556debd74c2b95f2c5890"
     },
     {
       "path": "icons/icon-192.png",
@@ -23,8 +23,8 @@
     },
     {
       "path": "index.html",
-      "size": 34460,
-      "sha256": "6320090f1f7c6b91d5e588caa09f8fcedf663d84c77c9a63902487c867bf44bb"
+      "size": 34164,
+      "sha256": "ce61e21d8330c0c34c786dfe7fc96337a1cb108f3373dcac5e8c8dc57733b0e6"
     },
     {
       "path": "js/app.js",
@@ -33,8 +33,8 @@
     },
     {
       "path": "js/core/AbsenceApp.js",
-      "size": 9825,
-      "sha256": "4167df22ab9edbb6064cd61339d4f30c00de42c32976ab21810b7c5791499554"
+      "size": 9792,
+      "sha256": "5b61219c0d4a28fe89f24654ca9d760e1985fa2f8bb270b4b9f80a9fdbe487cf"
     },
     {
       "path": "js/core/database.js",
@@ -78,8 +78,8 @@
     },
     {
       "path": "js/modules/dashboard-search.js",
-      "size": 7553,
-      "sha256": "3d097c693c8066ae56c368d7eed30be853bf251c2ff3afbafc4710006cc4bfde"
+      "size": 5757,
+      "sha256": "ad93a486166aa6ecd51ecb7e96362a2ef996fdfbf40d1226472b7dcbbc186c12"
     },
     {
       "path": "js/modules/data-backup.js",
@@ -88,8 +88,8 @@
     },
     {
       "path": "js/modules/lifecycle-profile.js",
-      "size": 16213,
-      "sha256": "6c32a1bc11d6a1434325d45cf9fa51bb3ae4c0ca533be59657bd20847f58626c"
+      "size": 16179,
+      "sha256": "8a463432b47a8cacdab3cde143ef7e8471c9e01bcaea065cf7dfb86a5d75eed6"
     },
     {
       "path": "js/modules/pedagogical-followup.js",
@@ -103,8 +103,8 @@
     },
     {
       "path": "js/modules/students-classes.js",
-      "size": 23808,
-      "sha256": "4101017b04339c6331e555a91d37cd29fed2c74d6b2a71d1982177d4094fea1a"
+      "size": 23704,
+      "sha256": "b0a475309a49b5ca3d4fc02218f82da345d4189c158e289214caa4c71bb0c94c"
     },
     {
       "path": "js/modules/ui-navigation.js",
@@ -124,7 +124,7 @@
     {
       "path": "service-worker.js",
       "size": 2233,
-      "sha256": "76dbc97cc610bed93d67f673fbb004ee1dc103f21bd3b61a373bb71bf3e5a398"
+      "sha256": "dd3cc1f523ca7d7e7ed70a1d08e30472abe29e0894be6bcd8929e016a1f085bf"
     },
     {
       "path": "start.bat",
@@ -138,8 +138,8 @@
     },
     {
       "path": "tests/expected-methods.json",
-      "size": 3502,
-      "sha256": "050a0ba96335d7d8feae0c74e9ca922b68fa71a5ea0dd1011c763d876ab40453"
+      "size": 3373,
+      "sha256": "ec511a19790020a5f6a3bc6cade6b45e1f53e7aeae1a43a070a0059baaae271f"
     },
     {
       "path": "tests/smoke-modules.js",

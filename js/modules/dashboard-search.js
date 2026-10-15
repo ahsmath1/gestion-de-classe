@@ -3,32 +3,6 @@ import { AbsenceApp } from '../core/AbsenceApp.js';
 import { db } from '../core/database.js';
 
 const methods = {
-  async loadFavorites() {
-      try { const s = await db.get('settings','favoriteClasses'); this.favoriteClasses = Array.isArray(s?.value) ? s.value : []; }
-      catch(e) { this.favoriteClasses = []; }
-    },
-
-  async saveFavorites() { await db.put('settings',{key:'favoriteClasses',value:this.favoriteClasses}); },
-
-  isFavoriteClass(id) { return this.favoriteClasses.includes(id); },
-
-  async toggleFavoriteClass(id) {
-      this.favoriteClasses = this.isFavoriteClass(id) ? this.favoriteClasses.filter(x=>x!==id) : [...this.favoriteClasses,id];
-      await this.saveFavorites(); await this.renderDashboard(); await this.renderClassesManageList();
-    },
-
-  async renderQuickFavorites() {
-      const box=document.getElementById('quick-favorites-list'); if(!box)return;
-      const classes=await db.getAll('classes'); const fav=classes.filter(c=>this.isFavoriteClass(c.id));
-      box.innerHTML=fav.length ? fav.map(c=>`<button class="favorite-chip" onclick="app.quickFavorite('${this.escapeHtml(c.id)}')">⭐ ${this.escapeHtml(c.name)}</button>`).join('') : '<span class="help-text">Aucun favori. Ajoutez ⭐ à une classe dans « Gérer les Classes ».</span>';
-    },
-
-  async quickFavorite(classId) {
-      const courses=await this.getCoursesForDate(this.selectedDate); const c=courses.find(x=>x.classId===classId);
-      if(c) return this.startRollcall(c.id,c.classId,this.selectedDate,c.startTime,c.endTime);
-      await this.navigateTo('view-students'); const sel=document.getElementById('select-class-filter'); if(sel){sel.value=classId; await this.renderStudentsList();}
-    },
-
   async openGlobalSearch() {
       await this.openModal('modal-global-search'); const input=document.getElementById('global-search-input'); if(input){input.value=''; input.focus();}
       this.renderGlobalSearch('');
@@ -40,7 +14,7 @@ const methods = {
       const [classes,students]=await Promise.all([db.getAll('classes'),db.getAll('students')]);
       const cs=classes.filter(c=>(c.name||'').toLowerCase().includes(q)).slice(0,8);
       const ss=students.filter(s=>!s.archived&&`${s.nom||''} ${s.prenom||''}`.toLowerCase().includes(q)).slice(0,12);
-      box.innerHTML=[cs.length?'<h4>Classes</h4>'+cs.map(c=>`<div class="global-result"><button onclick="app.closeModal('modal-global-search');app.navigateTo('view-students');setTimeout(()=>{const s=document.getElementById('select-class-filter');if(s){s.value='${this.escapeHtml(c.id)}';app.renderStudentsList();}},50)">📚 ${this.escapeHtml(c.name)}</button><button class="star-result" onclick="event.stopPropagation();app.toggleFavoriteClass('${this.escapeHtml(c.id)}')">${this.isFavoriteClass(c.id)?'★':'☆'}</button></div>`).join(''):'', ss.length?'<h4>Élèves</h4>'+ss.map(s=>`<button class="global-result single" onclick="app.closeModal('modal-global-search');app.showStudentDetail('${this.escapeHtml(s.id)}')">👤 ${this.escapeHtml(s.nom)} ${this.escapeHtml(s.prenom)}</button>`).join(''):''].join('') || '<p class="help-text">Aucun résultat.</p>';
+      box.innerHTML=[cs.length?'<h4>Classes</h4>'+cs.map(c=>`<div class="global-result"><button onclick="app.closeModal('modal-global-search');app.navigateTo('view-students');setTimeout(()=>{const s=document.getElementById('select-class-filter');if(s){s.value='${this.escapeHtml(c.id)}';app.renderStudentsList();}},50)">📚 ${this.escapeHtml(c.name)}</button></div>`).join(''):'', ss.length?'<h4>Élèves</h4>'+ss.map(s=>`<button class="global-result single" onclick="app.closeModal('modal-global-search');app.showStudentDetail('${this.escapeHtml(s.id)}')">👤 ${this.escapeHtml(s.nom)} ${this.escapeHtml(s.prenom)}</button>`).join(''):''].join('') || '<p class="help-text">Aucun résultat.</p>';
     },
 
   updateCurrentDateDisplay() {
@@ -50,7 +24,6 @@ const methods = {
     },
 
   async renderDashboard() {
-      await this.renderQuickFavorites();
       const today = this.getTodayISO();
       const banner = document.getElementById('day-status-banner');
       const dayStatus = await this.getDayStatus(today);

@@ -8,7 +8,7 @@ Cette archive contient uniquement l'application V7 organisée en modules ES Java
 - `js/core/database.js` : accès IndexedDB.
 - `js/modules/lifecycle-profile.js` : démarrage, année scolaire et profil.
 - `js/modules/ui-navigation.js` : navigation, interface, modales et utilitaires visuels.
-- `js/modules/dashboard-search.js` : tableau de bord, favoris et recherche globale.
+- `js/modules/dashboard-search.js` : tableau de bord et recherche globale (favoris supprimés).
 - `js/modules/attendance-schedule.js` : emploi du temps, cours et appels.
 - `js/modules/students-classes.js` : classes, élèves, fiches et données de suivi.
 - `js/modules/pedagogical-followup.js` : pratiques, comportements et rapports.
@@ -44,3 +44,9 @@ Publier le contenu de ce dossier à la racine du chemin public prévu pour la V7
 ## Vérifications et limites
 
 Les tests fournis vérifient la syntaxe ES modules, le chargement de l'entrée V7 et la présence des méthodes métier et de l'action collective. Ils ne remplacent pas les essais fonctionnels complets dans un navigateur, sur Windows et Safari/iPhone. Les règles métier sont migrées dans les modules en conservant leur implémentation existante afin de réduire le risque d'une réécriture simultanée du comportement et de l'architecture. Les vulnérabilités XSS, la suppression/archivage des classes et les scénarios de sauvegarde doivent faire l'objet d'une validation de sécurité séparée avant usage avec les données réelles.
+
+
+### Modification de cette édition
+- Le bloc « Favoris » des classes a été supprimé du tableau de bord.
+- Les étoiles et commandes de favoris ont été retirées de la recherche globale.
+- Les méthodes, l’état et le chargement des favoris ont été supprimés ; la recherche et la navigation par classe restent disponibles.

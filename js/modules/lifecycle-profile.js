@@ -8,7 +8,6 @@ const methods = {
       await this.loadActiveSchoolYear();
       this.changeCounter = Number((await db.get('settings', `autoBackupChangeCounter_${this.activeSchoolYear}`))?.value || 0);
       await this.loadLanguage();
-      await this.loadFavorites();
       await this.applyUserInterfacePreferences();
       this.setupTheme();
       this.registerServiceWorker();
