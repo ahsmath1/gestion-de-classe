@@ -134,17 +134,38 @@ import { db } from '../core/database.js';
   proto.addActivityPenalty=async function(studentId,actionId){
     const action=await db.get('activityActions',actionId);
     if(action?.type!=='reward') return _addActivityPenalty_v47.call(this,studentId,actionId);
-    const student=await db.get('students',studentId); if(!action||!student||action.active===false)return;
-    const maxScore=Number((await db.get('settings','activityMaxScore'))?.value||20);
-    const current=await this.getStudentActivityScore(studentId);
-    const reward=Number(action.penalty||0);
-    if(current>=maxScore-1e-9){alert(`La note est déjà à ${maxScore}/${maxScore}.`);return;}
-    const amount=Math.min(reward,maxScore-current);
-    const id=`acte_${Date.now()}_${Math.random().toString(36).slice(2,7)}`;
-    await db.put('activityEvents',{id,studentId,categoryId:action.categoryId,actionId,penalty:-amount,date:this.getTodayISO(),createdAt:new Date().toISOString(),type:'reward'});
-    await this.registerChange(); this.activityLastAction=id; this.showSaveIndicator();
-    if (this.currentStudentDetailId === studentId) await this.renderStudentActivityManager(studentId);
-    await this.renderActivitiesView(); await this.renderDashboard();
+
+    this.activityActionsInProgress ||= new Set();
+    const actionKey=`${studentId}::${actionId}`;
+    if(this.activityActionsInProgress.has(actionKey)) return;
+    this.activityActionsInProgress.add(actionKey);
+    const cardBefore=document.querySelector(`.activity-student-card[data-student-id="${CSS.escape(String(studentId))}"]`);
+    cardBefore?.querySelector(`.activity-action-btn[data-action-id="${CSS.escape(String(actionId))}"]`)?.classList.add('activity-action-saving');
+    try {
+      const student=await db.get('students',studentId);
+      if(!action||!student||action.active===false){this.showActivityActionFeedback(studentId,actionId,'Action impossible : élève ou récompense introuvable.','error');return;}
+      const maxScore=Number((await db.get('settings','activityMaxScore'))?.value||20);
+      const current=await this.getStudentActivityScore(studentId);
+      const reward=Number(action.penalty||0);
+      if(!Number.isFinite(reward)||reward<=0){this.showActivityActionFeedback(studentId,actionId,'Cette récompense possède un nombre de points invalide.','error');return;}
+      if(current>=maxScore-1e-9){this.showActivityActionFeedback(studentId,actionId,`La note est déjà au maximum (${maxScore}/${maxScore}) : aucune récompense ajoutée.`,'warning');return;}
+      const amount=Math.min(reward,maxScore-current);
+      const id=`acte_${Date.now()}_${Math.random().toString(36).slice(2,7)}`;
+      await db.put('activityEvents',{id,studentId,categoryId:action.categoryId,actionId,penalty:-amount,date:this.getTodayISO(),createdAt:new Date().toISOString(),type:'reward'});
+      await this.registerChange(); this.activityLastAction=id; this.showSaveIndicator();
+      if(this.currentStudentDetailId===studentId) await this.renderStudentActivityManager(studentId);
+      await this.renderActivitiesView(); await this.renderDashboard();
+      this.showActivityActionFeedback(studentId,actionId,
+        `✓ Récompense « ${action.name} » enregistrée pour ${student.prenom||''} ${student.nom||''}. +${amount.toFixed(2)} pt · Note : ${(current+amount).toFixed(2)}/${maxScore}.`.replace(/\s+/g,' ').trim(),
+        'success');
+    } catch(error) {
+      console.error('Échec de l’enregistrement de la récompense :',error);
+      this.showActivityActionFeedback(studentId,actionId,'Erreur : la récompense n’a pas pu être confirmée. Vérifiez la sauvegarde avant de réessayer.','error');
+    } finally {
+      this.activityActionsInProgress.delete(actionKey);
+      const card=document.querySelector(`.activity-student-card[data-student-id="${CSS.escape(String(studentId))}"]`);
+      card?.querySelector(`.activity-action-btn[data-action-id="${CSS.escape(String(actionId))}"]`)?.classList.remove('activity-action-saving');
+    }
   };
 
   const _getScore_v47=proto.getStudentActivityScore;

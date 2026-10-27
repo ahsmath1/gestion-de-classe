@@ -637,6 +637,11 @@ body {
 
 .activity-action-btn:disabled{opacity:.45;cursor:not-allowed;transform:none!important}
 .activity-card-updated .activity-score{transform:scale(1.04)}
+/* V7 — confirmation visible des pénalités/récompenses, y compris sur écran tactile */
+.activity-action-btn.activity-action-saving{opacity:.65;outline:2px solid var(--primary);outline-offset:1px}
+.activity-action-btn.activity-action-success{background:#dcfce7!important;border:2px solid #16a34a!important;color:#14532d!important;box-shadow:0 0 0 3px rgba(22,163,74,.18)!important;transform:scale(.98)}
+.activity-action-btn.activity-action-success b{color:#166534!important}
+@media(prefers-reduced-motion:reduce){.activity-action-btn.activity-action-success{transform:none}}
 .activity-score{transition:transform .12s ease}
 
 /* --- Mode cours compact : saisie ultra-rapide --- */

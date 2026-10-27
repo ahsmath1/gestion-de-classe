@@ -149,5 +149,6 @@
   "csvEscape",
   "exportCSV",
   "loadDemoData",
-  "clearAllData"
+  "clearAllData",
+  "showActivityActionFeedback"
 ]

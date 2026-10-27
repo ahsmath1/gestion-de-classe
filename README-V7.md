@@ -50,3 +50,11 @@ Les tests fournis vérifient la syntaxe ES modules, le chargement de l'entrée V
 - Le bloc « Favoris » des classes a été supprimé du tableau de bord.
 - Les étoiles et commandes de favoris ont été retirées de la recherche globale.
 - Les méthodes, l’état et le chargement des favoris ont été supprimés ; la recherche et la navigation par classe restent disponibles.
+
+
+### Correctif V7.0.1 — retour visuel des activités
+- Après l'enregistrement d'une pénalité ou d'une récompense, un message confirme l'élève, l'action, les points appliqués et la note recalculée.
+- Le bouton concerné est temporairement surligné en vert ; pendant l'enregistrement, il reçoit un indicateur visuel.
+- Les doubles clics sur la même action sont ignorés pendant son enregistrement. Les limites atteintes et les erreurs produisent également un message visible.
+- Le cache du service worker a été versionné pour faciliter la mise à jour des fichiers sur le site.
+- Vérifications exécutées : syntaxe des modules, test de démarrage/présence des méthodes et intégrité ZIP. Les essais complets dans un navigateur réel restent à effectuer.

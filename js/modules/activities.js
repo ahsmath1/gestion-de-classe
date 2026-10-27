@@ -116,52 +116,98 @@ const methods = {
       this.renderActivitiesView();
     },
 
-  async addActivityPenalty(studentId, actionId) {
-      const action = await db.get('activityActions', actionId);
-      const student = await db.get('students', studentId);
-      if (!action || !student || action.active === false) return;
-      const category = await db.get('activityCategories', action.categoryId);
-      const events = (await db.getAll('activityEvents')).filter(e=>e.studentId===studentId && e.categoryId===action.categoryId && !e.archivedAt);
-      const used = events.reduce((s,e)=>s+Number(e.penalty||0),0);
-      const maxCat = Number(category?.maxPoints ?? 0);
-      const penalty = Number(action.penalty || 0);
-      if (maxCat > 0 && used + penalty > maxCat + 1e-9) {
-        alert(`La limite de ${maxCat} points de cette catégorie est déjà atteinte.`);
-        return;
+  showActivityActionFeedback(studentId, actionId, message, type='success') {
+      const card = document.querySelector(`.activity-student-card[data-student-id="${CSS.escape(String(studentId))}"]`);
+      const button = card?.querySelector(`.activity-action-btn[data-action-id="${CSS.escape(String(actionId))}"]`);
+      if (button) {
+        button.classList.remove('activity-action-success', 'activity-action-saving');
+        void button.offsetWidth;
+        button.classList.add('activity-action-success');
+        setTimeout(() => button.classList.remove('activity-action-success'), 1600);
       }
-      const maxScore = Number((await db.get('settings','activityMaxScore'))?.value || 20);
-      const current = await this.getStudentActivityScore(studentId);
-      if (current <= 0) { alert('La note est déjà à 0/20.'); return; }
-      const id=`acte_${Date.now()}_${Math.random().toString(36).slice(2,7)}`;
-      await db.put('activityEvents',{id,studentId,categoryId:action.categoryId,actionId,penalty,date:this.getTodayISO(),createdAt:new Date().toISOString()});
-      await this.registerChange();
-      this.activityLastAction=id;
-      await this.renderDashboard();
-      this.showSaveIndicator();
-      if (this.currentStudentDetailId === studentId) await this.renderStudentActivityManager(studentId);
-      // Mise à jour instantanée de la carte concernée : pas de rechargement de toute la classe.
-      const card = document.querySelector(`.activity-student-card[data-student-id="${CSS.escape(studentId)}"]`);
-      if (card) {
-        const scoreEl = card.querySelector('.activity-score');
-        if (scoreEl) scoreEl.innerHTML = `${Math.max(0, current - penalty).toFixed(2)}<span> / ${maxScore}</span>`;
-        const countEl = card.querySelector('.activity-event-count');
-        if (countEl) countEl.textContent = `${events.length + 1} pénalité(s)`;
-        const catEl = card.querySelector(`.activity-category[data-category-id="${CSS.escape(action.categoryId)}"], .activity-row-category[data-category-id="${CSS.escape(action.categoryId)}"]`);
-        if (catEl) {
-          const newUsed = used + penalty;
-          const budgetEl = catEl.querySelector('.category-budget');
-          if (budgetEl) budgetEl.textContent = `−${newUsed.toFixed(2)} / ${maxCat}`;
-          const remainingEl = catEl.querySelector('.activity-remaining');
-          if (remainingEl) remainingEl.textContent = `Reste : ${Math.max(0, maxCat - newUsed).toFixed(2)} pt(s)`;
-          const remaining = Math.max(0, maxCat - newUsed);
-          catEl.querySelectorAll('.activity-action-btn').forEach(btn => {
-            const aId=btn.dataset.actionId;
-            const actionPenalty = aId ? Number(btn.querySelector('b')?.textContent?.replace('−','')||0) : 0;
-            btn.disabled = maxCat > 0 ? (remaining <= 1e-9 || actionPenalty > remaining + 1e-9) : false;
-          });
+      if (message) this.showToast(message, type, type === 'error' ? 4000 : 3200);
+    },
+
+  async addActivityPenalty(studentId, actionId) {
+      this.activityActionsInProgress ||= new Set();
+      const actionKey = `${studentId}::${actionId}`;
+      if (this.activityActionsInProgress.has(actionKey)) return;
+      this.activityActionsInProgress.add(actionKey);
+      const cardBefore = document.querySelector(`.activity-student-card[data-student-id="${CSS.escape(String(studentId))}"]`);
+      const buttonBefore = cardBefore?.querySelector(`.activity-action-btn[data-action-id="${CSS.escape(String(actionId))}"]`);
+      buttonBefore?.classList.add('activity-action-saving');
+      try {
+        const action = await db.get('activityActions', actionId);
+        const student = await db.get('students', studentId);
+        if (!action || !student || action.active === false) {
+          this.showActivityActionFeedback(studentId, actionId, 'Action impossible : élève ou pénalité introuvable.', 'error');
+          return;
         }
-        card.classList.add('activity-card-updated');
-        setTimeout(() => card.classList.remove('activity-card-updated'), 180);
+        const category = await db.get('activityCategories', action.categoryId);
+        const events = (await db.getAll('activityEvents')).filter(e=>e.studentId===studentId && e.categoryId===action.categoryId && !e.archivedAt);
+        const used = events.reduce((sum,e)=>sum+Number(e.penalty||0),0);
+        const maxCat = Number(category?.maxPoints ?? 0);
+        const penalty = Number(action.penalty || 0);
+        if (!Number.isFinite(penalty) || penalty <= 0) {
+          this.showActivityActionFeedback(studentId, actionId, 'Cette pénalité possède un nombre de points invalide.', 'error');
+          return;
+        }
+        if (maxCat > 0 && used + penalty > maxCat + 1e-9) {
+          this.showActivityActionFeedback(studentId, actionId, `Limite atteinte : ${maxCat} points maximum pour cette catégorie.`, 'warning');
+          return;
+        }
+        const maxScore = Number((await db.get('settings','activityMaxScore'))?.value || 20);
+        const current = await this.getStudentActivityScore(studentId);
+        if (current <= 0) {
+          this.showActivityActionFeedback(studentId, actionId, 'La note est déjà à 0/20 : aucune pénalité ajoutée.', 'warning');
+          return;
+        }
+        const appliedPenalty = Math.min(penalty, current);
+        const id=`acte_${Date.now()}_${Math.random().toString(36).slice(2,7)}`;
+        await db.put('activityEvents',{id,studentId,categoryId:action.categoryId,actionId,penalty:appliedPenalty,date:this.getTodayISO(),createdAt:new Date().toISOString(),type:'penalty'});
+        await this.registerChange();
+        this.activityLastAction=id;
+        this.showSaveIndicator();
+
+        // Confirmation explicite dès que l'enregistrement en base a réussi.
+        const newScore = Math.max(0, current - appliedPenalty);
+        this.showActivityActionFeedback(studentId, actionId,
+          `✓ Pénalité « ${action.name} » enregistrée pour ${student.prenom || ''} ${student.nom || ''}. −${appliedPenalty.toFixed(2)} pt · Note : ${newScore.toFixed(2)}/${maxScore}.`.replace(/\s+/g, ' ').trim(),
+          'success');
+
+        if (this.currentStudentDetailId === studentId) await this.renderStudentActivityManager(studentId);
+        const card = document.querySelector(`.activity-student-card[data-student-id="${CSS.escape(String(studentId))}"]`);
+        if (card) {
+          const scoreEl = card.querySelector('.activity-score');
+          if (scoreEl) scoreEl.innerHTML = `${newScore.toFixed(2)}<span> / ${maxScore}</span>`;
+          const countEl = card.querySelector('.activity-event-count');
+          const studentEvents = (await db.getAll('activityEvents')).filter(e=>e.studentId===studentId && !e.archivedAt);
+          if (countEl) countEl.textContent = `${studentEvents.length} pénalité(s)`;
+          const catEl = card.querySelector(`.activity-category[data-category-id="${CSS.escape(String(action.categoryId))}"], .activity-row-category[data-category-id="${CSS.escape(String(action.categoryId))}"]`);
+          if (catEl) {
+            const newUsed = used + appliedPenalty;
+            const budgetEl = catEl.querySelector('.category-budget');
+            if (budgetEl) budgetEl.textContent = `−${newUsed.toFixed(2)} / ${maxCat}`;
+            const remainingEl = catEl.querySelector('.activity-remaining');
+            if (remainingEl) remainingEl.textContent = `Reste : ${Math.max(0, maxCat - newUsed).toFixed(2)} pt(s)`;
+            const remaining = Math.max(0, maxCat - newUsed);
+            catEl.querySelectorAll('.activity-action-btn').forEach(btn => {
+              const aId=btn.dataset.actionId;
+              const actionPenalty = aId ? Number(btn.querySelector('b')?.textContent?.replace('−','')||0) : 0;
+              btn.disabled = maxCat > 0 ? (remaining <= 1e-9 || actionPenalty > remaining + 1e-9) : false;
+            });
+          }
+          card.classList.add('activity-card-updated');
+          setTimeout(() => card.classList.remove('activity-card-updated'), 500);
+        }
+        await this.renderDashboard();
+      } catch (error) {
+        console.error('Échec de l’enregistrement de la pénalité :', error);
+        this.showActivityActionFeedback(studentId, actionId, 'Erreur : la pénalité n’a pas pu être confirmée. Vérifiez la sauvegarde avant de réessayer.', 'error');
+      } finally {
+        this.activityActionsInProgress.delete(actionKey);
+        const card = document.querySelector(`.activity-student-card[data-student-id="${CSS.escape(String(studentId))}"]`);
+        card?.querySelector(`.activity-action-btn[data-action-id="${CSS.escape(String(actionId))}"]`)?.classList.remove('activity-action-saving');
       }
     },
 

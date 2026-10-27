@@ -1,15 +1,15 @@
 {
-  "project": "Gestion de classe V7 modulaire",
+  "project": "Gestion de classe V7 modulaire — correctif V7.0.1 retour visuel",
   "files": [
     {
       "path": "README-V7.md",
-      "size": 3713,
-      "sha256": "606c265fd7ea39032ca120ba5ee41b93d65432039df96a35a91bdc6b5a23992b"
+      "size": 4489,
+      "sha256": "16a943893e14d6b47830640fc7cb0eb60a0c8011d9a604ac361f5ec2887e1b83"
     },
     {
       "path": "css/style.css",
-      "size": 34721,
-      "sha256": "5abaecf2f0c2fedbaa47c8cde63f47a9357eb08e659556debd74c2b95f2c5890"
+      "size": 35301,
+      "sha256": "2c53d03b279922cacbc2e6219c90ed6869977b85df439b0741346acf2c3354a9"
     },
     {
       "path": "icons/icon-192.png",
@@ -48,8 +48,8 @@
     },
     {
       "path": "js/extensions/v47-enhancements.js",
-      "size": 10542,
-      "sha256": "0099e188901eb062519f97866a1f96fb665cbf9400f85dc64cc27ef27d7b6562"
+      "size": 12351,
+      "sha256": "7a2f6ee6109139d41806c916da5ed68dabe88abe338e05897b5c690054b616e1"
     },
     {
       "path": "js/extensions/v50-initialization.js",
@@ -63,8 +63,8 @@
     },
     {
       "path": "js/modules/activities.js",
-      "size": 25618,
-      "sha256": "2c02265d987d20e59dd20ac8b727a218049f05e18dfbb731464787028af0741e"
+      "size": 28697,
+      "sha256": "85c3f8982e61f16bbf8db32d557ddd195ababa9147b704553e2d1c435ba91b1b"
     },
     {
       "path": "js/modules/attendance-schedule.js",
@@ -123,8 +123,8 @@
     },
     {
       "path": "service-worker.js",
-      "size": 2233,
-      "sha256": "dd3cc1f523ca7d7e7ed70a1d08e30472abe29e0894be6bcd8929e016a1f085bf"
+      "size": 2238,
+      "sha256": "f74658e009306a75a2223a8c00281a58e255a12d18bd4a227a51359f1351e7dd"
     },
     {
       "path": "start.bat",
@@ -138,8 +138,8 @@
     },
     {
       "path": "tests/expected-methods.json",
-      "size": 3373,
-      "sha256": "ec511a19790020a5f6a3bc6cade6b45e1f53e7aeae1a43a070a0059baaae271f"
+      "size": 3405,
+      "sha256": "3ddce0ef5fd707b4b925a86e88e7a19517b072c6adb3f0a3ae080d68c15818b7"
     },
     {
       "path": "tests/smoke-modules.js",
