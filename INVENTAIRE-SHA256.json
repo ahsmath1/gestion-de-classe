@@ -1,15 +1,15 @@
 {
-  "project": "Gestion de classe V7 modulaire — correctif V7.0.1 retour visuel",
+  "project": "Gestion de classe V7.1 modulaire — progression pédagogique",
   "files": [
     {
       "path": "README-V7.md",
-      "size": 4489,
-      "sha256": "16a943893e14d6b47830640fc7cb0eb60a0c8011d9a604ac361f5ec2887e1b83"
+      "size": 5866,
+      "sha256": "b72da131388a4eebde3eda7821e4ef06dd67138e01d352b3f979f08b314a5bb3"
     },
     {
       "path": "css/style.css",
-      "size": 35301,
-      "sha256": "2c53d03b279922cacbc2e6219c90ed6869977b85df439b0741346acf2c3354a9"
+      "size": 37899,
+      "sha256": "418dffd3e46ae787ad798f2fb1c457d5fd21893dfa9eaa5f4de2bc3af8031b3a"
     },
     {
       "path": "icons/icon-192.png",
@@ -23,13 +23,13 @@
     },
     {
       "path": "index.html",
-      "size": 34164,
-      "sha256": "ce61e21d8330c0c34c786dfe7fc96337a1cb108f3373dcac5e8c8dc57733b0e6"
+      "size": 37536,
+      "sha256": "f2c59720876922ebb05d14c9ebc485d0f6a32ba612984d6c7dbb518ebe5440eb"
     },
     {
       "path": "js/app.js",
-      "size": 909,
-      "sha256": "a74ea24bf75dcdb8b36164177711ef670e8dc220d90f4ccb385c299ec92d83f5"
+      "size": 944,
+      "sha256": "f2f02dab4551f383ed742c59b59b70574df8312615f801fdc633eab362d15bfa"
     },
     {
       "path": "js/core/AbsenceApp.js",
@@ -77,6 +77,11 @@
       "sha256": "34969d187c6f629a550836e4600fb6c053e604a0e05e69f1e2894dfc66b9ef37"
     },
     {
+      "path": "js/modules/curriculum-data.js",
+      "size": 72636,
+      "sha256": "5545cf8501a52700c6238d8df6817a9c7a5ae3dca17e909a393bc882a38c2056"
+    },
+    {
       "path": "js/modules/dashboard-search.js",
       "size": 5757,
       "sha256": "ad93a486166aa6ecd51ecb7e96362a2ef996fdfbf40d1226472b7dcbbc186c12"
@@ -97,6 +102,11 @@
       "sha256": "3d2be707894e834c3f16e985a28b88f1872a401e57ef56dade9357747f3b87ce"
     },
     {
+      "path": "js/modules/progression.js",
+      "size": 10736,
+      "sha256": "dc4397d039956c09bfdcc6bb1ee961b76928a0f27d11a384ff9652ed4dc3fc22"
+    },
+    {
       "path": "js/modules/statistics-history.js",
       "size": 6534,
       "sha256": "8fbc4386a70eec2a2e38dc09536df9054cb778754cd0cbb9ce3937f97fc46c5f"
@@ -108,8 +118,8 @@
     },
     {
       "path": "js/modules/ui-navigation.js",
-      "size": 8730,
-      "sha256": "80b2b4f3eacd73c03c7ced61c49f4d141365f3e92e92d42a5c0ac0baf3dd467c"
+      "size": 8797,
+      "sha256": "fd20b24bb79802b555fc929dbd6020e2cd8a6bbbad331bb590b88420b1067979"
     },
     {
       "path": "manifest.json",
@@ -118,13 +128,13 @@
     },
     {
       "path": "package.json",
-      "size": 400,
-      "sha256": "455e5b1df296a1b7437cb411098bc4841a7be09a543437789b3227183fd4ede4"
+      "size": 402,
+      "sha256": "86532c8649426ca1df865d775c1a0757e01c9f05ced57914a0c19ed5cc21d450"
     },
     {
       "path": "service-worker.js",
-      "size": 2238,
-      "sha256": "f74658e009306a75a2223a8c00281a58e255a12d18bd4a227a51359f1351e7dd"
+      "size": 2300,
+      "sha256": "b57c0f92ccaa3819fa1ab812d3b85e8874e3ad1f1777cc51741b32da0ffbe41f"
     },
     {
       "path": "start.bat",
@@ -138,13 +148,13 @@
     },
     {
       "path": "tests/expected-methods.json",
-      "size": 3405,
-      "sha256": "3ddce0ef5fd707b4b925a86e88e7a19517b072c6adb3f0a3ae080d68c15818b7"
+      "size": 3513,
+      "sha256": "955fe97a1a10eb88cbb40822ed7967edbc838fa88c6dd1969622d684e4703c9f"
     },
     {
       "path": "tests/smoke-modules.js",
-      "size": 1241,
-      "sha256": "65993405fcc574180d9344c6ef7ca6166743705dc0077ac6ea27f8943941b47c"
+      "size": 1665,
+      "sha256": "dc5039725f26d45c7b4ed01e9c9a95530dce9f3fe9b7257659fa4012a984a6c2"
     }
   ]
 }

@@ -13,7 +13,7 @@
 <!-- Top Navigation Header -->
 <header class="app-header">
 <div class="header-content">
-<h1 class="logo-text" id="btn-home-logo">📚 <span id="app-name-display">Gestion de classe</span> <span class="year-badge" id="app-year-display">2026/2027 · V7</span></h1>
+<h1 class="logo-text" id="btn-home-logo">📚 <span id="app-name-display">Gestion de classe</span> <span class="year-badge" id="app-year-display">2026/2027 · V7.1</span></h1>
 <div class="header-actions"><select aria-label="Année scolaire" class="school-year-selector" id="school-year-selector" onchange="app.switchSchoolYear(this.value)"><option value="2026/2027">2026/2027</option></select><button class="icon-btn" title="Nouvelle année scolaire" onclick="app.createSchoolYear()">➕</button><button class="icon-btn" id="global-search-btn" title="Recherche globale" aria-label="Recherche globale">🔎</button><button class="icon-btn" id="express-call-btn" title="Appel express" aria-label="Appel express">⚡</button><select aria-label="Langue" class="language-selector" id="language-selector"><option value="fr">🇫🇷 Français</option><option value="ar">🇲🇦 العربية</option></select>
 <span class="save-indicator" id="save-indicator">✓ Enregistré</span>
 <button aria-label="Changer de thème" class="icon-btn" id="theme-toggle">🌙</button>
@@ -44,6 +44,11 @@
 <span class="dash-icon">📅</span>
 <span class="dash-title">Mes cours du jour</span>
 <span class="dash-sub" data-i18n="todayCoursesSub">Saisie directe de l'appel</span>
+</button>
+<button class="dash-btn" onclick="app.navigateTo('view-progression')">
+<span class="dash-icon">📚</span>
+<span class="dash-title">Progression pédagogique</span>
+<span class="dash-sub">Choisir les tâches et suivre leur état</span>
 </button>
 <button class="dash-btn" onclick="app.navigateTo('view-students')">
 <span class="dash-icon">👨‍🎓</span>
@@ -93,6 +98,7 @@
 <button class="btn-back" data-i18n="home" onclick="app.navigateTo('view-home')">← Accueil</button>
 <h2 data-i18n="todayTitle">Cours du jour</h2>
 </div>
+<div class="card progression-shortcut"><p>Après avoir choisi la classe de la séance, ouvrez le suivi pour enregistrer la tâche réellement travaillée.</p><button class="btn btn-secondary" onclick="app.openProgressionFromToday()">📚 Suivre la progression pédagogique</button></div>
 <div class="date-selector-bar">
 <button class="btn btn-sm" id="btn-prev-day">◀</button>
 <input class="date-input" id="input-today-date" type="date"/>
@@ -101,6 +107,29 @@
 </div>
 <div class="status-banner hidden" id="today-banner"></div>
 <div class="courses-list" id="today-courses-list"></div>
+</section>
+<!-- VIEW : SUIVI DE PROGRESSION PÉDAGOGIQUE -->
+<section class="view" id="view-progression">
+  <div class="view-header">
+    <button class="btn-back" onclick="app.navigateTo('view-home')">← Accueil</button>
+    <h2>📚 Progression pédagogique</h2>
+  </div>
+  <div class="card progression-form-card">
+    <p class="help-text">Choisissez manuellement la tâche réellement travaillée. La sélection ne déclenche aucun enregistrement automatique.</p>
+    <div class="form-group"><label for="progression-class">Classe</label><select class="form-control" id="progression-class" onchange="app.progressionSelectionChanged()"></select></div>
+    <div class="form-group"><label for="progression-period">Période</label><select class="form-control" id="progression-period" onchange="app.progressionSelectionChanged()"></select></div>
+    <div class="form-group"><label for="progression-lesson">Leçon</label><select class="form-control" id="progression-lesson" onchange="app.progressionLessonChanged()"></select></div>
+    <div class="form-group"><label for="progression-task">Tâche / activité programmée</label><select class="form-control" id="progression-task" onchange="app.refreshProgressionStatus()"></select></div>
+    <div class="progression-selected-task" id="progression-selected-task" aria-live="polite"></div>
+    <div class="progression-form-grid">
+      <div class="form-group"><label for="progression-date">Date de la séance</label><input class="form-control" id="progression-date" type="date" /></div>
+      <div class="form-group"><label for="progression-status">État de la tâche</label><select class="form-control" id="progression-status"><option>À faire</option><option>En cours</option><option>Terminée</option><option>À reprendre</option></select></div>
+    </div>
+    <div class="form-group"><label for="progression-mastery">Bilan de maîtrise des élèves (facultatif)</label><select class="form-control" id="progression-mastery"><option value="">Non renseigné</option><option value="Satisfaisant">Satisfaisant</option><option value="Partiel">Partiel</option><option value="Insuffisant">Insuffisant</option></select><small class="help-text">La tâche terminée ne signifie pas automatiquement que les élèves la maîtrisent.</small></div>
+    <button class="btn btn-primary btn-block" onclick="app.saveProgressionSession()">✓ Enregistrer cette séance</button>
+  </div>
+  <div class="card progression-overview-card"><h3>Avancement de la période sélectionnée</h3><div id="progression-summary" class="progression-summary"></div></div>
+  <div class="card progression-history-card"><h3>Historique des séances récentes</h3><p class="help-text">Chaque enregistrement ajoute une entrée. Une reprise ne supprime pas les séances précédentes.</p><div id="progression-history-list"></div></div>
 </section>
 <!-- VIEW 3: ÉCRAN D'APPEL -->
 <section class="view" id="view-rollcall">

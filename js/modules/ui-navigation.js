@@ -74,6 +74,7 @@ const methods = {
       window.scrollTo(0, 0);
   
       if (viewId === 'view-today') this.renderTodayCourses();
+      if (viewId === 'view-progression') this.renderProgression();
       if (viewId === 'view-students') this.renderStudentsList();
       if (viewId === 'view-stats') this.renderStats();
       if (viewId === 'view-history') this.renderHistory();

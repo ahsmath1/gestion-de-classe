@@ -924,3 +924,28 @@ button:focus-visible,input:focus-visible,select:focus-visible,textarea:focus-vis
   #student-detail-card .btn{min-height:44px}
   .student-row-actions .btn{min-width:40px;min-height:40px}
 }
+
+
+/* V7.1 — progression pédagogique : interface sobre, tactile et responsive */
+.progression-shortcut { margin-bottom: 14px; }
+.progression-shortcut p { margin-top: 0; color: var(--text-secondary, #64748b); }
+.progression-form-card, .progression-overview-card, .progression-history-card { margin-bottom: 16px; }
+.progression-form-card .form-group { margin-bottom: 13px; }
+.progression-form-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px; }
+.progression-selected-task { border-left: 3px solid var(--primary, #2563eb); background: var(--surface-alt, #f8fafc); padding: 12px; border-radius: 6px; margin: 8px 0 14px; font-size: .94rem; line-height: 1.45; overflow-wrap: anywhere; }
+.progression-summary { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 8px; }
+.progression-stat { border: 1px solid var(--border, #e2e8f0); border-radius: 8px; padding: 10px 8px; text-align: center; display: flex; flex-direction: column; gap: 3px; }
+.progression-stat strong { font-size: 1.35rem; }
+.progression-stat span { font-size: .78rem; color: var(--text-secondary, #64748b); }
+.progression-progress { grid-column: 1 / -1; margin-top: 8px; }
+.progression-progress-label { display: flex; justify-content: space-between; gap: 8px; margin-bottom: 7px; }
+.progression-progress-track { height: 8px; border-radius: 20px; background: var(--border, #e2e8f0); overflow: hidden; }
+.progression-progress-track span { display: block; height: 100%; background: var(--primary, #2563eb); border-radius: inherit; transition: width .2s ease; }
+.progression-progress small { display: block; margin-top: 8px; color: var(--text-secondary, #64748b); line-height: 1.45; }
+.progression-history-item { display: flex; justify-content: space-between; align-items: flex-start; gap: 12px; padding: 12px 0; border-bottom: 1px solid var(--border, #e2e8f0); }
+.progression-history-item:last-child { border-bottom: 0; }
+.progression-history-item > div { min-width: 0; display: flex; flex-direction: column; gap: 4px; }
+.progression-history-item strong { overflow-wrap: anywhere; }
+.progression-history-item small { color: var(--text-secondary, #64748b); line-height: 1.4; }
+.progression-status-chip { display: inline-block; flex-shrink: 0; border: 1px solid var(--border, #cbd5e1); border-radius: 999px; padding: 5px 9px; font-size: .76rem; white-space: nowrap; }
+@media (max-width: 560px) { .progression-form-grid { grid-template-columns: 1fr; gap: 0; } .progression-summary { grid-template-columns: repeat(2, minmax(0, 1fr)); } .progression-history-item { flex-direction: column; } }

@@ -1,6 +1,7 @@
 import fs from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
+import { curriculum } from '../js/modules/curriculum-data.js';
 const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 const expected = JSON.parse(fs.readFileSync(path.join(root, 'tests', 'expected-methods.json'), 'utf8'));
 globalThis.window = globalThis;
@@ -14,4 +15,7 @@ if (app.getTodayISO().length !== 10) throw new Error('getTodayISO ne renvoie pas
 if (typeof app.setAllPresent !== 'function') throw new Error('Action collective manquante.');
 if (typeof app.applyBulkActivityAction !== 'function') throw new Error('Action collective des activités manquante.');
 if (globalThis.__v7Init == null) throw new Error('Le démarrage DOMContentLoaded n’est pas enregistré.');
+if (curriculum['2AC']?.length !== 5 || curriculum['3AC']?.length !== 5) throw new Error('Programmation : les 5 périodes 2AC et 3AC doivent être présentes.');
+const sample = curriculum['2AC'][0].lessons[0].tasks[0];
+if (sample.title !== 'Calculer la puissance à exposant positif d’un nombre') throw new Error('Tâche de référence 2AC/P1 non conforme.');
 console.log(`Smoke test réussi : ${expected.length} méthodes historiques chargées, action collective présente.`);

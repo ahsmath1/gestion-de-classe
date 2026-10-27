@@ -58,3 +58,18 @@ Les tests fournis vérifient la syntaxe ES modules, le chargement de l'entrée V
 - Les doubles clics sur la même action sont ignorés pendant son enregistrement. Les limites atteintes et les erreurs produisent également un message visible.
 - Le cache du service worker a été versionné pour faciliter la mise à jour des fichiers sur le site.
 - Vérifications exécutées : syntaxe des modules, test de démarrage/présence des méthodes et intégrité ZIP. Les essais complets dans un navigateur réel restent à effectuer.
+
+
+## V7.1 — Progression pédagogique
+
+- Ajout d'une rubrique « Progression pédagogique » accessible depuis l'accueil et « Mes cours du jour ».
+- Programmations 2AC et 3AC 2026/2027 intégrées à partir des deux PDF fournis, organisées par période, leçon et tâche/activité.
+- Le professeur choisit manuellement la tâche et son statut : À faire, En cours, Terminée ou À reprendre.
+- Le bilan de maîtrise des élèves est facultatif et distinct de l'état de réalisation de la tâche.
+- Chaque validation crée une nouvelle entrée d'historique ; une reprise ne supprime pas les séances précédentes.
+- Les données sont conservées dans IndexedDB, dans le magasin `settings`, et suivent le mécanisme de sauvegarde JSON existant.
+- Le statut « Terminée » et la tâche 1 de 2AC/Période 1 sont préselectionnés comme exemple d'interface, mais rien n'est enregistré tant que le professeur ne clique pas sur « Enregistrer cette séance ».
+
+### Limites de validation
+
+Les contrôles automatisés vérifient la syntaxe des modules et la présence des méthodes. Ils ne remplacent pas un test navigateur complet sur PC et Safari/iPhone, ni une validation manuelle de chaque ligne extraite des PDF. Avant de remplacer la version en service, tester la navigation, l'enregistrement, la sauvegarde/restauration et le mode hors ligne sur une copie des données.

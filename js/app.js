@@ -8,6 +8,7 @@ import './modules/dashboard-search.js';
 import './modules/attendance-schedule.js';
 import './modules/students-classes.js';
 import './modules/pedagogical-followup.js';
+import './modules/progression.js';
 import './modules/calendar-journal.js';
 import './modules/activities.js';
 import './modules/statistics-history.js';
