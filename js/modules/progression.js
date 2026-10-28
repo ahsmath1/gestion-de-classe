@@ -65,7 +65,7 @@ const methods = {
     taskSelect.innerHTML = (lesson?.tasks || []).map(t => `<option value="${this.escapeHtml(t.id)}">${this.escapeHtml(t.code)} — ${this.escapeHtml(t.title)}</option>`).join('');
     if (lesson?.tasks.some(t => t.id === previousTask)) taskSelect.value = previousTask;
     const date = document.getElementById('progression-date');
-    if (date && !date.value) date.value = this.getTodayISO();
+    if (date && (this.progressionPreferredDate || !date.value)) date.value = this.progressionPreferredDate || this.getTodayISO();
   },
 
   async progressionSelectionChanged() {
@@ -144,10 +144,11 @@ const methods = {
     await this.refreshProgressionStatus();
   },
 
-  async openProgressionFromToday(classId) {
+  async openProgressionFromToday(classId, date) {
     const preferred = classId || this.activeCourse?.classId || document.getElementById('rollcall-class')?.textContent?.trim() || '2AC-12';
     this.progressionPreferredClass = preferred;
-    this.navigateTo('view-progression');
+    this.progressionPreferredDate = date || this.selectedDate || this.getTodayISO();
+    await this.navigateTo('view-progression');
   }
 };
 Object.assign(AbsenceApp.prototype, methods);

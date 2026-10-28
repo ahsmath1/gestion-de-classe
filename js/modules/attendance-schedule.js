@@ -64,17 +64,21 @@ const methods = {
       banner.classList.add('hidden');
       const courses = await this.getCoursesForDate(this.selectedDate);
       if (!courses.length) { list.innerHTML='<div class="card"><p style="text-align:center;">Aucun cours dans l’emploi du temps pour ce jour.</p></div>'; return; }
-      const [sessions,timetable] = await Promise.all([db.getAll('sessions'), db.getAll('timetable')]);
+      const [sessions,timetable,progressionRow] = await Promise.all([db.getAll('sessions'), db.getAll('timetable'), db.get('settings', 'progressionHistory_' + this.activeSchoolYear)]);
+      const progressionHistory = Array.isArray(progressionRow?.value) ? progressionRow.value : [];
       for (const course of courses) {
         const done = sessions.some(x=>x.date===this.selectedDate && x.courseId===course.id && x.completed);
         const sessionNumber=this.getWeeklySessionNumber(course,timetable);
         const reminders=await this.getClassReminders(course.classId,this.selectedDate);
         const events=await this.getClassEvents(course.classId,this.selectedDate);
         const recentEvents=events.slice(0,2);
+        const dayTasks=progressionHistory.filter(h=>h.classId===course.classId && h.date===this.selectedDate).sort((a,b)=>String(b.savedAt||'').localeCompare(String(a.savedAt||'')));
+        const dayTask=dayTasks[0];
         const card=document.createElement('div'); card.className='course-card';
         card.innerHTML=`<div class="course-main-info">
           <div class="course-time">🕒 ${course.startTime} – ${course.endTime}</div>
           <div class="course-class"><strong>${this.escapeHtml(String(course.classId).replace(/^(\d+)AC-(.+)$/,'$1-$2'))}</strong>${sessionNumber?` <span class="session-number">· S${sessionNumber}</span>`:''}</div>
+          <div class="course-task"><span class="course-task-label">📘 Tâche du jour</span><span class="course-task-title">${dayTask ? this.escapeHtml(`${dayTask.taskCode} — ${dayTask.taskTitle}`) : 'Aucune tâche choisie'}</span><button class="btn btn-sm btn-secondary course-task-edit" onclick="event.stopPropagation();app.openProgressionFromToday('${this.escapeHtml(course.classId)}','${this.escapeHtml(this.selectedDate)}')">✏️ ${dayTask?'Modifier':'Choisir une tâche'}</button></div>
           ${reminders.length?`<div class="course-reminders"><b>📌 Rappels</b>${reminders.map(r=>`<div class="class-reminder-line"><span>${this.escapeHtml(r.text)}</span><button class="mini-done" onclick="event.stopPropagation();app.completeClassReminder('${r.id}')" title="Terminer">✓</button></div>`).join('')}</div>`:''}
           ${recentEvents.length?`<div class="course-events"><b>📝 Événements visibles</b>${recentEvents.map(e=>`<div class="class-event-line"><span>${this.formatDateFR(e.date)}${e.sessionNumber?` · S${e.sessionNumber}`:''} — ${this.escapeHtml(e.text)}</span><button class="mini-event-action" onclick="event.stopPropagation();app.toggleClassEventVisibility('${e.id}')" title="Masquer cet événement">🙈</button></div>`).join('')}<button class="btn btn-sm btn-secondary event-journal-link" onclick="event.stopPropagation();app.navigateTo('view-calendar')">👁️ Gérer les événements</button></div>`:''}
           <div class="course-tools"><button class="btn btn-sm btn-secondary" onclick="event.stopPropagation();app.addClassReminder('${this.escapeHtml(course.classId)}','${this.selectedDate}')">📌 Rappel</button><button class="btn btn-sm btn-secondary" onclick="event.stopPropagation();app.addClassEvent('${this.escapeHtml(course.classId)}','${this.selectedDate}','${this.escapeHtml(course.id)}')">📝 Événement</button></div>
