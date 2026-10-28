@@ -83,8 +83,6 @@ const methods = {
         item.innerHTML = `
           <div>
             <strong>${idx + 1}. ${this.escapeHtml(student.nom)} ${this.escapeHtml(student.prenom)}</strong>
-            <small style="display:block;color:var(--text-muted, #777)">Position dans la classe : ${orderIndex + 1}/${classOrder.length}</small>
-            <small style="display:block;color:var(--text-muted, #777)">${student.remediationGroup ? `Groupe : ${this.escapeHtml(student.remediationGroup)}` : 'Groupe : non affecté'}</small>
           </div>
           <div class="student-row-actions">
             <button class="btn btn-sm btn-secondary" title="Monter l'élève" aria-label="Monter ${this.escapeHtml(student.nom)}" ${orderIndex<=0?'disabled':''} onclick="app.moveStudent('${this.escapeHtml(student.id)}',-1)">↑</button>
