@@ -73,3 +73,7 @@ Les tests fournis vérifient la syntaxe ES modules, le chargement de l'entrée V
 ### Limites de validation
 
 Les contrôles automatisés vérifient la syntaxe des modules et la présence des méthodes. Ils ne remplacent pas un test navigateur complet sur PC et Safari/iPhone, ni une validation manuelle de chaque ligne extraite des PDF. Avant de remplacer la version en service, tester la navigation, l'enregistrement, la sauvegarde/restauration et le mode hors ligne sur une copie des données.
+
+
+## V7.1.1 — Ajustement mobile
+Ajout de règles CSS pour limiter les débordements horizontaux sur les écrans étroits, notamment iPhone et interface arabe RTL. Les tests sur appareil réel restent nécessaires.
