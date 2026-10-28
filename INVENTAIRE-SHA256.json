@@ -1,15 +1,15 @@
 {
-  "project": "Gestion de classe V7.1 modulaire — progression pédagogique",
+  "project": "Gestion de classe V7.1.2 modulaire — commandes compactes iPhone",
   "files": [
     {
       "path": "README-V7.md",
-      "size": 5866,
-      "sha256": "b72da131388a4eebde3eda7821e4ef06dd67138e01d352b3f979f08b314a5bb3"
+      "size": 6082,
+      "sha256": "d12cbb790c6117cfcc451b987330406bd428eaa196fe2c43c8702c9c1a1b2b62"
     },
     {
       "path": "css/style.css",
-      "size": 37899,
-      "sha256": "418dffd3e46ae787ad798f2fb1c457d5fd21893dfa9eaa5f4de2bc3af8031b3a"
+      "size": 41534,
+      "sha256": "1c63080b01b2246abdf0dff76f565010a86ecb6b4ae2264fdd97bda466845937"
     },
     {
       "path": "icons/icon-192.png",
@@ -128,8 +128,8 @@
     },
     {
       "path": "package.json",
-      "size": 402,
-      "sha256": "86532c8649426ca1df865d775c1a0757e01c9f05ced57914a0c19ed5cc21d450"
+      "size": 416,
+      "sha256": "6e00b90ef75c54651ced94570bf25ca9e5ebf1ebd876c6d11b6c11d74f148fba"
     },
     {
       "path": "service-worker.js",

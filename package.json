@@ -1,9 +1,9 @@
 {
   "name": "gestion-de-classe-v7-modulaire",
-  "version": "7.1.0",
+  "version": "7.1.2",
   "private": true,
   "type": "module",
-  "description": "Application locale de gestion de classe, architecture modulaire V7.1",
+  "description": "Application locale de gestion de classe, V7.1.2 — commandes compactes sur iPhone",
   "scripts": {
     "check:syntax": "node --experimental-vm-modules tests/check-modules.js",
     "check:smoke": "node tests/smoke-modules.js",
