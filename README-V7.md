@@ -77,3 +77,19 @@ Les contrôles automatisés vérifient la syntaxe des modules et la présence de
 
 ## V7.1.1 — Ajustement mobile
 Ajout de règles CSS pour limiter les débordements horizontaux sur les écrans étroits, notamment iPhone et interface arabe RTL. Les tests sur appareil réel restent nécessaires.
+
+
+## V7.2 — Contrôle rapide
+
+- Accès depuis la page d'appel et « Mes cours du jour ».
+- Tirage aléatoire par classe, priorisant les élèves non encore contrôlés dans le cycle.
+- Critères indépendants : travail à domicile, cahier, livret et ardoise.
+- Résultats : conforme, non conforme ou non contrôlé.
+- Ajout manuel d'élèves ciblés sans modifier la rotation aléatoire.
+- Historique par classe et dans la fiche individuelle.
+- Données stockées dans IndexedDB `settings` sous une clé propre à l'année scolaire ; elles sont incluses dans les exports/restaurations JSON et les archives annuelles.
+- Aucun changement du schéma IndexedDB. Lorsqu’un critère est marqué « Non conforme », une pénalité de −0,5 point est automatiquement créée dans le système habituel des activités. « Conforme » et « Non contrôlé » ne déclenchent rien.
+- Les pénalités automatiques sont visibles dans la note de comportement et l’historique habituel, avec la date du contrôle et le critère concerné. Chaque constat est protégé contre une double application pour un même contrôle.
+- La catégorie « Contrôle rapide automatique » et ses quatre actions sont créées automatiquement si nécessaire.
+
+Limite : la fusion de sauvegardes JSON conserve les paramètres déjà présents sur l'appareil cible ; elle ne fusionne pas automatiquement les historiques Contrôle rapide de deux appareils.

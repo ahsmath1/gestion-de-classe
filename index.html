@@ -152,6 +152,7 @@
 <span class="cnt-retard">Retards (R): <b id="cnt-r">0</b></span>
 </div>
 <div class="rollcall-quick-actions">
+<button class="btn btn-sm btn-secondary" onclick="app.openQuickCheck()">☑ Contrôle rapide</button>
 <button class="btn btn-sm btn-success" id="btn-all-present">✓ Tous présents</button>
 <button class="btn btn-sm btn-secondary" id="btn-bulk-activity">⭐ Action collective</button>
 <button class="btn btn-sm btn-secondary" id="btn-intensive-mode">⚡ Cours intensif</button>
@@ -168,6 +169,22 @@
 <div class="rollcall-footer">
 <button class="btn btn-success btn-block btn-lg" id="btn-finish-rollcall">✓ APPEL TERMINÉ</button>
 </div>
+</section>
+<!-- VIEW 3B : CONTRÔLE RAPIDE -->
+<section class="view" id="view-quick-check">
+  <div class="view-header"><button class="btn-back" onclick="app.navigateTo(app.activeCourse ? 'view-rollcall' : 'view-home')">← Retour</button><h2>⚡ Contrôle rapide</h2><p class="help-text">Sélection équitable et vérification des affaires scolaires.</p></div>
+  <div class="card">
+    <div class="form-group"><label for="qc-class">Classe</label><select class="form-control" id="qc-class" onchange="app.renderQuickCheckSummary();app.renderQuickCheckHistory()"></select></div>
+    <div class="form-group"><label for="qc-date">Date du contrôle</label><input class="form-control" type="date" id="qc-date"></div>
+    <input type="hidden" id="qc-course-id">
+    <div class="form-group"><label for="qc-count">Nombre d'élèves à contrôler</label><input class="form-control" id="qc-count" type="number" min="1" max="100" value="6"></div>
+    <h3>Éléments à vérifier</h3>
+    <div class="qc-options"><label><input type="checkbox" id="qc-homework" checked> Travail à domicile</label><label><input type="checkbox" id="qc-notebook" checked> Cahier</label><label><input type="checkbox" id="qc-booklet" checked> Livret</label><label><input type="checkbox" id="qc-slate" checked> Ardoise</label></div>
+    <p id="qc-rotation-summary" class="help-text"></p>
+    <button class="btn btn-primary btn-block" onclick="app.drawQuickCheck()">🎲 Tirer les élèves</button>
+  </div>
+  <div class="card"><h3>Résultats du contrôle</h3><p id="qc-draft-info" class="help-text">Effectue un tirage pour commencer.</p><div id="qc-student-results"></div><button class="btn btn-success btn-block" onclick="app.saveQuickCheck()">✓ Enregistrer le contrôle</button></div>
+  <div class="card"><h3>Historique récent</h3><div id="qc-history"></div></div>
 </section>
 <!-- VIEW 4: GESTION DES ÉLÈVES -->
 <section class="view" id="view-students">
@@ -216,6 +233,7 @@
 <button class="btn btn-secondary" data-i18n="configure" onclick="app.openModal('modal-activity-settings'); app.renderActivitySettings()">⚙️ Configurer les activités</button>
 </div>
 </div>
+<div class="card"><h3>☑ Historique des contrôles rapides</h3><div id="student-quick-check-history"></div></div>
 <h3 data-i18n="attendanceHistory">Historique de présence</h3>
 <div class="history-table-container" id="student-detail-history"></div>
 <div class="card student-practices-card" id="student-behaviors-card">

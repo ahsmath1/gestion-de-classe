@@ -1110,3 +1110,15 @@ input, select, textarea, button { max-width: 100%; }
 .course-task-title{font-size:.9rem;font-weight:600;line-height:1.35;overflow-wrap:anywhere;max-width:100%;}
 .course-task-edit{margin-top:3px;min-height:34px;}
 @media(max-width:600px){.course-task{margin-top:8px;padding:8px}.course-task-title{font-size:.84rem}.course-task-edit{font-size:.78rem;max-width:100%;white-space:normal}}
+
+/* V7.2 — Contrôle rapide : interface compacte, adaptée au tactile. */
+.qc-options{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px;margin:10px 0 16px}
+.qc-options label{display:flex;align-items:center;gap:9px;padding:10px;border:1px solid var(--border-color,#dbe1e8);border-radius:9px;min-width:0}
+.qc-options input{width:20px;height:20px;flex:0 0 auto}
+.qc-student{padding:12px;margin:10px 0;min-width:0}
+.qc-criteria{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px;margin-top:10px}
+.qc-result{display:flex;flex-direction:column;gap:4px;min-width:0;font-size:.85rem}
+.qc-result .form-control{width:100%;min-width:0;padding:8px;font-size:.85rem}
+.qc-history-row{display:flex;justify-content:space-between;gap:10px;padding:9px 0;border-bottom:1px solid var(--border-color,#e2e8f0);font-size:.9rem}
+.qc-history-row span{color:var(--text-secondary,#64748b);text-align:right}
+@media(max-width:600px){.qc-options{grid-template-columns:repeat(2,minmax(0,1fr))}.qc-criteria{grid-template-columns:repeat(2,minmax(0,1fr))}.qc-history-row{flex-direction:column;gap:3px}.qc-history-row span{text-align:left}}

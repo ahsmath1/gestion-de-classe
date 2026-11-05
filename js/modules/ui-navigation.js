@@ -75,6 +75,7 @@ const methods = {
   
       if (viewId === 'view-today') this.renderTodayCourses();
       if (viewId === 'view-progression') this.renderProgression();
+      if (viewId === 'view-quick-check') { this.renderQuickCheckSummary(); this.renderQuickCheckHistory(); }
       if (viewId === 'view-students') this.renderStudentsList();
       if (viewId === 'view-stats') this.renderStats();
       if (viewId === 'view-history') this.renderHistory();

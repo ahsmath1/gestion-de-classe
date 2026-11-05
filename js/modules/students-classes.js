@@ -325,6 +325,7 @@ const methods = {
         `;
       }
   
+      await this.renderQuickCheckStudentHistory(studentId);
       await this.renderStudentBehaviors(student);
       await this.renderStudentGeneralRemark(student);
       const customRemark = document.getElementById('student-custom-remark');
